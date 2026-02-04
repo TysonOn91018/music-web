@@ -808,11 +808,24 @@ function getChatUserName() {
 }
 
 function getSupabase() {
-  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) return null;
+  if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+    console.log("[Chat] Supabase config missing - url:", !!SUPABASE_CONFIG.url, "key:", !!SUPABASE_CONFIG.anonKey);
+    return null;
+  }
   if (!window.supabaseClient) {
     const { createClient } = window.supabase || {};
-    if (!createClient) return null;
-    window.supabaseClient = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    if (!createClient) {
+      console.error("[Chat] Supabase JS library not loaded");
+      return null;
+    }
+    const url = SUPABASE_CONFIG.url.replace(/\/$/, "");
+    try {
+      window.supabaseClient = createClient(url, SUPABASE_CONFIG.anonKey);
+      console.log("[Chat] Supabase client created:", url);
+    } catch (e) {
+      console.error("[Chat] Failed to create Supabase client:", e);
+      return null;
+    }
   }
   return window.supabaseClient || null;
 }
@@ -820,9 +833,14 @@ function getSupabase() {
 function chatJoinRoom() {
   chatLeaveRoom();
   const roomId = getRoomId();
-  if (!roomId) return;
+  if (!roomId) {
+    console.log("[Chat] No roomId - mood:", state.mood, "track:", state.currentTrack);
+    updateChatButton(false, "未选择曲目");
+    return;
+  }
   const supabase = getSupabase();
   if (!supabase) {
+    console.log("[Chat] Supabase not configured");
     updateChatButton(false, "配置 Supabase 后可启用同听聊天");
     return;
   }
@@ -830,6 +848,8 @@ function chatJoinRoom() {
   state.chatRoomId = roomId;
   const roomHash = getRoomIdHash(roomId);
   const channelName = "room:" + roomHash;
+  console.log("[Chat] Joining room:", roomId, "hash:", roomHash, "channel:", channelName);
+  
   chatPresenceChannel = supabase.channel(channelName, {
     config: { presence: { key: getChatUserId() } },
   });
@@ -838,17 +858,33 @@ function chatJoinRoom() {
     .on("presence", { event: "sync" }, () => {
       const presence = chatPresenceChannel?.presenceState?.() || {};
       const count = Object.values(presence).reduce((n, arr) => n + (arr?.length || 0), 0);
+      console.log("[Chat] Presence sync - count:", count, "presence:", presence);
       state.canChat = count >= 2;
-      updateChatButton(state.canChat);
+      updateChatButton(state.canChat, state.canChat ? `有 ${count} 人同听，可聊天` : `当前 ${count} 人，需要至少 2 人才能聊天`);
     })
     .subscribe(async (status) => {
+      console.log("[Chat] Channel status:", status);
       if (status === "SUBSCRIBED") {
-        await chatPresenceChannel?.track({
-          userId: getChatUserId(),
-          userName: getChatUserName(),
-          mood: state.mood,
-          trackUrl: state.currentTrack?.url,
-        });
+        try {
+          await chatPresenceChannel?.track({
+            userId: getChatUserId(),
+            userName: getChatUserName(),
+            mood: state.mood,
+            trackUrl: state.currentTrack?.url,
+          });
+          console.log("[Chat] Presence tracked");
+        } catch (e) {
+          console.error("[Chat] Presence track error:", e);
+          toast("Presence 上报失败：" + (e.message || e));
+        }
+      }
+      if (status === "CHANNEL_ERROR") {
+        console.error("[Chat] Channel error");
+        toast("Supabase 连接异常，请检查 URL 与 key（可尝试使用 anon JWT key）");
+      }
+      if (status === "TIMED_OUT" || status === "CLOSED") {
+        console.warn("[Chat] Channel closed/timed out:", status);
+        toast("Supabase 连接超时，请检查网络或 Realtime 是否启用");
       }
     });
 }
@@ -885,7 +921,12 @@ function chatLoadMessages() {
     .select("id, user_name, message, created_at")
     .eq("room_id", roomHash)
     .order("created_at", { ascending: true })
-    .then(({ data }) => {
+    .then(({ data, error }) => {
+      if (error) {
+        console.warn("Supabase chat load:", error);
+        if (els.chatMessages) els.chatMessages.innerHTML = "<div class=\"chatMsg\">加载失败，请检查 Supabase 配置与 chat_messages 表</div>";
+        return;
+      }
       if (!data) return;
       els.chatMessages.innerHTML = data
         .map((row) => {
@@ -896,6 +937,10 @@ function chatLoadMessages() {
         })
         .join("");
       els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+    })
+    .catch((e) => {
+      console.warn("Supabase chat load:", e);
+      if (els.chatMessages) els.chatMessages.innerHTML = "<div class=\"chatMsg\">请求失败，请确认 URL/key 正确且表已创建</div>";
     });
 }
 

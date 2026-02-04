@@ -288,11 +288,13 @@ function pickTrack({ autoplay = true, fadeIn = false } = {}) {
 }
 
 function loadTrack(track, { autoplay = true, fadeIn = false } = {}) {
-  chatLeaveRoom();
+  try {
+    chatLeaveRoom();
+  } catch (_) {}
   els.trackTitle.textContent = track.title;
-  els.audio.src = track.url;
+  els.audio.src = track.url || "";
   els.audio.currentTime = 0;
-  els.progressInner.style.width = "0%";
+  if (els.progressInner) els.progressInner.style.width = "0%";
   els.timeNow.textContent = "0:00";
   els.timeDur.textContent = "0:00";
   if (els.detailTime) els.detailTime.textContent = "—";
@@ -300,25 +302,25 @@ function loadTrack(track, { autoplay = true, fadeIn = false } = {}) {
   highlightCurrentTrack();
 
   if (autoplay) {
-    // Autoplay 在部分浏览器会被拦截：失败就保持暂停状态
     if (fadeIn) {
       els.audio.volume = 0;
     } else {
       els.audio.volume = 1;
     }
-
-    els.audio
-      .play()
-      .then(() => {
+    const p = els.audio.play();
+    if (p && typeof p.then === "function") {
+      p.then(() => {
         setPlayBtn(true);
         if (fadeIn) fadeAudio(els.audio, 0, 1, 680);
-      })
-      .catch(() => {
+      }).catch(() => {
         setPlayBtn(false);
         els.audio.volume = 1;
       });
+    }
   }
-  chatJoinRoom();
+  try {
+    chatJoinRoom();
+  } catch (_) {}
 }
 
 function togglePlay() {
@@ -386,11 +388,11 @@ function syncProgress() {
   const dur = els.audio.duration || 0;
   const cur = els.audio.currentTime || 0;
   if (dur > 0) {
-    els.progressInner.style.width = `${Math.min(100, (cur / dur) * 100)}%`;
+    if (els.progressInner) els.progressInner.style.width = `${Math.min(100, (cur / dur) * 100)}%`;
     els.timeDur.textContent = formatTime(dur);
     if (els.detailTime) els.detailTime.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
   } else {
-    els.progressInner.style.width = "0%";
+    if (els.progressInner) els.progressInner.style.width = "0%";
     els.timeDur.textContent = "0:00";
     if (els.detailTime) els.detailTime.textContent = "—";
   }
@@ -704,6 +706,10 @@ function bind() {
   els.audio.addEventListener("pause", () => {
     setPlayBtn(false);
     document.body.classList.remove("is-playing");
+  });
+  els.audio.addEventListener("error", () => {
+    setPlayBtn(false);
+    toast("无法播放音频，请确认 music 文件夹内有 MP3 并用本地服务器打开（如 npx serve .）");
   });
 
   window.addEventListener("keydown", (e) => {

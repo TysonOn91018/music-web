@@ -5,41 +5,33 @@
  * - 刷新：无 mood 时回首页；有 ?mood= 或 #mood 时打开对应心情页
  */
 
-// 本地 music 文件夹内的 MP3（路径相对于 index.html）
-const MUSIC_DIR = "music/";
+// 根目录下的 MP3（与 index.html 同目录）
+const TRACK_URL = "夜に溶けるまま-2.mp3";
 
 const MOODS = {
   relax: {
     tag: "😌 放松",
     copy: ["放轻松，先深呼吸一下。", "把肩膀放下来，今天也辛苦了。", "这首歌，送给需要休息的你。"],
     particles: { speed: 0.35, drift: 0.25, size: [1.2, 3.2], count: 56 },
-    tracks: [
-      { title: "夜に溶けるまま", url: MUSIC_DIR + "夜に溶けるまま-2.mp3" },
-    ],
+    tracks: [{ title: "夜に溶けるまま", url: TRACK_URL }],
   },
   heartbreak: {
     tag: "💔 失恋",
     copy: ["没关系，先难过一会儿也可以。", "我懂，你不需要解释。", "听完这首，再决定要不要原谅今天。"],
     particles: { speed: 0.55, drift: 0.18, size: [1.0, 2.6], count: 70 },
-    tracks: [
-      { title: "夜に溶けるまま", url: MUSIC_DIR + "夜に溶けるまま-2.mp3" },
-    ],
+    tracks: [{ title: "夜に溶けるまま", url: TRACK_URL }],
   },
   hype: {
     tag: "🔥 想燃起来",
     copy: ["把音量调大一点。", "今天就该是主角。", "让心跳替你倒数：3，2，1。"],
     particles: { speed: 1.25, drift: 0.42, size: [1.4, 4.2], count: 92 },
-    tracks: [
-      { title: "夜に溶けるまま", url: MUSIC_DIR + "夜に溶けるまま-2.mp3" },
-    ],
+    tracks: [{ title: "夜に溶けるまま", url: TRACK_URL }],
   },
   quiet: {
     tag: "🌧 想安静一下",
     copy: ["安静也很好，世界可以先慢一点。", "就让这一首，陪你走一段路。", "不用说话，音乐会懂。"],
     particles: { speed: 0.45, drift: 0.14, size: [1.0, 2.8], count: 64 },
-    tracks: [
-      { title: "夜に溶けるまま", url: MUSIC_DIR + "夜に溶けるまま-2.mp3" },
-    ],
+    tracks: [{ title: "夜に溶けるまま", url: TRACK_URL }],
   },
   love: {
     tag: "💗 恋",
@@ -49,9 +41,7 @@ const MOODS = {
       "这首歌，算是小小的告白练习。"
     ],
     particles: { speed: 0.55, drift: 0.24, size: [1.2, 3.0], count: 70 },
-    tracks: [
-      { title: "夜に溶けるまま", url: MUSIC_DIR + "夜に溶けるまま-2.mp3" },
-    ],
+    tracks: [{ title: "夜に溶けるまま", url: TRACK_URL }],
   },
   fun: {
     tag: "🎉 楽し",
@@ -61,9 +51,7 @@ const MOODS = {
       "这首歌适合边点头边乱跳。"
     ],
     particles: { speed: 0.9, drift: 0.36, size: [1.4, 3.6], count: 88 },
-    tracks: [
-      { title: "夜に溶けるまま", url: MUSIC_DIR + "夜に溶けるまま-2.mp3" },
-    ],
+    tracks: [{ title: "夜に溶けるまま", url: TRACK_URL }],
   },
 };
 

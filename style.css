@@ -103,8 +103,12 @@ body.is-player .bg__canvas {
 }
 
 .topbar {
-  /* 改用 deck 内部的导航/按钮，避免与首页导航重叠 */
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  position: relative;
+  z-index: 10;
 }
 
 .topbar * { pointer-events: auto; }
@@ -142,6 +146,29 @@ body.is-player .bg__canvas {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userName {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.btn--small {
+  padding: 6px 12px;
+  font-size: 0.85rem;
 }
 
 .panel {
@@ -767,6 +794,88 @@ body.is-entering .burst::after {
   font-variant-numeric: tabular-nums;
   color: rgba(255, 255, 255, 0.56);
   font-size: 0.9rem;
+}
+
+.listItem__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* 用户页面 */
+.userProfile {
+  padding: 20px 0;
+  text-align: center;
+}
+
+.userProfile__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 12px;
+  border: 2px solid var(--stroke);
+}
+
+.userProfile__name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.userProfile__stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.userProfile__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.userProfile__statLabel {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.userProfile__statValue {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.friendSection {
+  margin-bottom: 24px;
+}
+
+.friendSection__head {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.friendSearch {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.friendSearch::placeholder {
+  color: var(--muted);
+}
+
+.friendSearchResults {
+  margin-top: 12px;
 }
 
 .tips {
@@ -1459,6 +1568,129 @@ body[data-mood] {
   .link--soft {
     color: rgba(0, 0, 0, 0.8);
   }
+}
+
+/* 登录/注册模态框 */
+.authModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease);
+}
+
+.authModal--open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.authModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.authModal__content {
+  position: relative;
+  z-index: 1;
+  width: min(400px, 90vw);
+  background: var(--bg1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.authModal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms var(--ease), color 150ms var(--ease);
+}
+
+.authModal__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.authModal__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.authModal__tab {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 150ms var(--ease), border-color 150ms var(--ease);
+}
+
+.authModal__tab:hover {
+  color: var(--text);
+}
+
+.authModal__tab--active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.authModal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.authModal__form input {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+}
+
+.authModal__form input::placeholder {
+  color: var(--muted);
+}
+
+.authModal__form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.authModal__form .btn {
+  margin-top: 4px;
+}
+
+.authModal__error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  min-height: 20px;
+  margin-top: -4px;
 }
 
 @media (prefers-reduced-motion: reduce) {

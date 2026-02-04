@@ -109,6 +109,37 @@ const els = {
   detailAlbum: document.getElementById("detailAlbum"),
   detailTime: document.getElementById("detailTime"),
   audio: document.getElementById("audio"),
+  loginBtn: document.getElementById("loginBtn"),
+  logoutBtn: document.getElementById("logoutBtn"),
+  userInfo: document.getElementById("userInfo"),
+  userName: document.getElementById("userName"),
+  authModal: document.getElementById("authModal"),
+  authClose: document.getElementById("authClose"),
+  authTabLogin: document.getElementById("authTabLogin"),
+  authTabSignup: document.getElementById("authTabSignup"),
+  authFormLogin: document.getElementById("authFormLogin"),
+  authFormSignup: document.getElementById("authFormSignup"),
+  loginEmail: document.getElementById("loginEmail"),
+  loginPassword: document.getElementById("loginPassword"),
+  loginSubmit: document.getElementById("loginSubmit"),
+  loginError: document.getElementById("loginError"),
+  signupEmail: document.getElementById("signupEmail"),
+  signupPassword: document.getElementById("signupPassword"),
+  signupName: document.getElementById("signupName"),
+  signupSubmit: document.getElementById("signupSubmit"),
+  signupError: document.getElementById("signupError"),
+  userLeft: document.getElementById("userLeft"),
+  userRight: document.getElementById("userRight"),
+  userName: document.getElementById("userName"),
+  userEmail: document.getElementById("userEmail"),
+  profileName: document.getElementById("profileName"),
+  friendCount: document.getElementById("friendCount"),
+  searchFriend: document.getElementById("searchFriend"),
+  searchFriendBtn: document.getElementById("searchFriendBtn"),
+  searchResults: document.getElementById("searchResults"),
+  friendRequests: document.getElementById("friendRequests"),
+  requestCount: document.getElementById("requestCount"),
+  friendsList: document.getElementById("friendsList"),
 };
 
 let state = {
@@ -120,6 +151,9 @@ let state = {
   volumeBeforeMute: 1,
   canChat: false,
   chatRoomId: null,
+  user: null,
+  friends: [],
+  friendRequests: [],
 };
 
 /* ---------------------------
@@ -128,10 +162,13 @@ let state = {
 function showPick() {
   els.playerLeft?.classList.remove("view--active");
   els.playerRight?.classList.remove("view--active");
+  els.userLeft?.classList.remove("view--active");
+  els.userRight?.classList.remove("view--active");
   els.pickLeft?.classList.add("view--active");
   els.pickRight?.classList.add("view--active");
   document.body.classList.add("is-index");
   document.body.classList.remove("is-player");
+  document.body.classList.remove("is-user");
   document.body.classList.remove("is-playing");
   bgFX.setBreathing(false);
 }
@@ -139,11 +176,34 @@ function showPick() {
 function showPlayer() {
   els.pickLeft?.classList.remove("view--active");
   els.pickRight?.classList.remove("view--active");
+  els.userLeft?.classList.remove("view--active");
+  els.userRight?.classList.remove("view--active");
   els.playerLeft?.classList.add("view--active");
   els.playerRight?.classList.add("view--active");
   document.body.classList.remove("is-index");
+  document.body.classList.remove("is-user");
   document.body.classList.add("is-player");
   bgFX.setBreathing(true);
+}
+
+function showUserPage() {
+  if (!state.user) {
+    openAuthModal("login");
+    return;
+  }
+  els.pickLeft?.classList.remove("view--active");
+  els.pickRight?.classList.remove("view--active");
+  els.playerLeft?.classList.remove("view--active");
+  els.playerRight?.classList.remove("view--active");
+  els.userLeft?.classList.add("view--active");
+  els.userRight?.classList.add("view--active");
+  document.body.classList.remove("is-index");
+  document.body.classList.remove("is-player");
+  document.body.classList.add("is-user");
+  bgFX.setBreathing(false);
+  loadUserProfile();
+  loadFriends();
+  loadFriendRequests();
 }
 
 /* ---------------------------
@@ -663,6 +723,60 @@ function bind() {
     }
   });
 
+  // 登录系统
+  els.loginBtn?.addEventListener("click", () => openAuthModal("login"));
+  els.logoutBtn?.addEventListener("click", signOut);
+  els.authClose?.addEventListener("click", closeAuthModal);
+  els.authModal?.addEventListener("click", (e) => {
+    if (e.target.classList.contains("authModal__backdrop") || e.target.classList.contains("authModal")) {
+      closeAuthModal();
+    }
+  });
+  els.authTabLogin?.addEventListener("click", () => switchAuthTab("login"));
+  els.authTabSignup?.addEventListener("click", () => switchAuthTab("signup"));
+  els.loginSubmit?.addEventListener("click", async () => {
+    const email = els.loginEmail?.value?.trim();
+    const password = els.loginPassword?.value;
+    if (!email || !password) {
+      if (els.loginError) els.loginError.textContent = "请填写邮箱和密码";
+      return;
+    }
+    await signIn(email, password);
+  });
+  els.signupSubmit?.addEventListener("click", async () => {
+    const email = els.signupEmail?.value?.trim();
+    const password = els.signupPassword?.value;
+    const name = els.signupName?.value?.trim();
+    if (!email || !password) {
+      if (els.signupError) els.signupError.textContent = "请填写邮箱和密码";
+      return;
+    }
+    if (password.length < 6) {
+      if (els.signupError) els.signupError.textContent = "密码至少6位";
+      return;
+    }
+    await signUp(email, password, name);
+  });
+  els.loginPassword?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") els.loginSubmit?.click();
+  });
+  els.signupPassword?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") els.signupSubmit?.click();
+  });
+
+  // 用户页面
+  els.userName?.addEventListener("click", showUserPage);
+  els.searchFriendBtn?.addEventListener("click", async () => {
+    const q = els.searchFriend?.value?.trim();
+    await renderSearchResults(q);
+  });
+  els.searchFriend?.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+      const q = els.searchFriend?.value?.trim();
+      await renderSearchResults(q);
+    }
+  });
+
   els.backLink?.addEventListener("click", (e) => {
     e.preventDefault();
     resetToPick();
@@ -790,6 +904,7 @@ function getRoomIdHash(roomId) {
 }
 
 function getChatUserId() {
+  if (state.user?.id) return state.user.id;
   let id = localStorage.getItem(CHAT_USER_KEY);
   if (!id) {
     id = "u_" + Math.random().toString(36).slice(2, 12);
@@ -799,6 +914,8 @@ function getChatUserId() {
 }
 
 function getChatUserName() {
+  if (state.user?.user_metadata?.name) return state.user.user_metadata.name;
+  if (state.user?.email) return state.user.email.split("@")[0];
   let name = localStorage.getItem(CHAT_NAME_KEY);
   if (!name) {
     name = "User_" + Math.random().toString(36).slice(2, 6);
@@ -880,10 +997,12 @@ function chatJoinRoom() {
       }
       if (status === "CHANNEL_ERROR") {
         console.error("[Chat] Channel error");
-        toast("Supabase 连接异常，请检查 URL 与 key（可尝试使用 anon JWT key）");
+        updateChatButton(false, "Supabase 连接失败，请检查控制台错误或 Supabase 设置");
+        toast("Supabase 连接异常 - 请检查：1) Supabase → Settings → API → 是否允许你的域名 2) 浏览器控制台错误");
       }
       if (status === "TIMED_OUT" || status === "CLOSED") {
         console.warn("[Chat] Channel closed/timed out:", status);
+        updateChatButton(false, "连接超时 - 检查网络或 Supabase Realtime 设置");
         toast("Supabase 连接超时，请检查网络或 Realtime 是否启用");
       }
     });
@@ -906,7 +1025,11 @@ function chatLeaveRoom() {
 function updateChatButton(canOpen, tooltip) {
   if (!els.chatBtn) return;
   els.chatBtn.disabled = !canOpen;
-  els.chatBtn.title = tooltip || (canOpen ? "与同听这首歌的人聊天" : "暂无其他人同时收听此曲，无法打开聊天");
+  const defaultMsg = canOpen ? "与同听这首歌的人聊天" : "暂无其他人同时收听此曲，无法打开聊天";
+  els.chatBtn.title = tooltip || defaultMsg;
+  if (els.chatBtn.textContent.includes("Chat")) {
+    els.chatBtn.textContent = canOpen ? "💬 Chat" : "💬 Chat (需2人)";
+  }
 }
 
 function chatLoadMessages() {
@@ -1088,6 +1211,410 @@ function runEnterBurst(origin) {
 runEnterBurst._t = 0;
 
 /* ---------------------------
+ * 登录系统：Supabase Auth
+ * --------------------------- */
+async function checkAuthSession() {
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (session?.user) {
+    state.user = session.user;
+    updateUserUI(true);
+    await ensureUserRecord(session.user);
+  } else {
+    state.user = null;
+    updateUserUI(false);
+  }
+}
+
+async function ensureUserRecord(user) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const name = user.user_metadata?.name || user.email?.split("@")[0] || "用户";
+  await supabase.from("users").upsert({
+    id: user.id,
+    email: user.email,
+    name: name,
+  });
+}
+
+async function signUp(email, password, name) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    toast("Supabase 未配置");
+    return false;
+  }
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name: name || email.split("@")[0] },
+    },
+  });
+  if (error) {
+    if (els.signupError) els.signupError.textContent = error.message;
+    return false;
+  }
+  if (data?.user) {
+    const userName = name || email.split("@")[0];
+    await supabase.from("users").upsert({
+      id: data.user.id,
+      email: email,
+      name: userName,
+    });
+  }
+  if (els.signupError) els.signupError.textContent = "";
+  toast("注册成功！请检查邮箱验证链接");
+  closeAuthModal();
+  return true;
+}
+
+async function signIn(email, password) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    toast("Supabase 未配置");
+    return false;
+  }
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) {
+    if (els.loginError) els.loginError.textContent = error.message;
+    return false;
+  }
+  if (data?.user) {
+    state.user = data.user;
+    updateUserUI(true);
+    await ensureUserRecord(data.user);
+    if (els.loginError) els.loginError.textContent = "";
+    toast("登录成功");
+    closeAuthModal();
+    return true;
+  }
+  return false;
+}
+
+async function signOut() {
+  const supabase = getSupabase();
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+  state.user = null;
+  updateUserUI(false);
+  chatLeaveRoom();
+  toast("已登出");
+}
+
+function updateUserUI(isLoggedIn) {
+  if (!els.loginBtn || !els.userInfo || !els.userName) return;
+  if (isLoggedIn) {
+    els.loginBtn.style.display = "none";
+    els.userInfo.style.display = "flex";
+    const name = state.user?.user_metadata?.name || state.user?.email?.split("@")[0] || "用户";
+    els.userName.textContent = name;
+  } else {
+    els.loginBtn.style.display = "block";
+    els.userInfo.style.display = "none";
+  }
+}
+
+function loadUserProfile() {
+  if (!state.user) return;
+  const name = state.user?.user_metadata?.name || state.user?.email?.split("@")[0] || "用户";
+  const email = state.user?.email || "—";
+  if (els.profileName) els.profileName.textContent = name;
+  if (els.userEmail) els.userEmail.textContent = email;
+}
+
+/* ---------------------------
+ * 好友系统
+ * 注意：需要在 Supabase 创建 users 表存储用户信息（email, name）
+ * --------------------------- */
+async function searchUsers(query) {
+  if (!query?.trim()) return [];
+  const supabase = getSupabase();
+  if (!supabase || !state.user) return [];
+  const q = query.trim().toLowerCase();
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, email, name")
+    .or(`email.ilike.%${q}%,name.ilike.%${q}%`)
+    .neq("id", state.user.id)
+    .limit(10);
+  if (error || !data) {
+    console.warn("Search users:", error);
+    return [];
+  }
+  return data.map((u) => ({
+    id: u.id,
+    email: u.email,
+    user_metadata: { name: u.name },
+  }));
+}
+
+async function sendFriendRequest(toUserId) {
+  const supabase = getSupabase();
+  if (!supabase || !state.user) return false;
+  const { error } = await supabase.from("friend_requests").insert({
+    from_user_id: state.user.id,
+    to_user_id: toUserId,
+    status: "pending",
+  });
+  if (error) {
+    console.error("Send friend request:", error);
+    toast("发送失败：" + (error.message || "未知错误"));
+    return false;
+  }
+  toast("好友请求已发送");
+  return true;
+}
+
+async function acceptFriendRequest(requestId, fromUserId) {
+  const supabase = getSupabase();
+  if (!supabase || !state.user) return false;
+  const { error: updateError } = await supabase
+    .from("friend_requests")
+    .update({ status: "accepted" })
+    .eq("id", requestId);
+  if (updateError) {
+    console.error("Accept request:", updateError);
+    return false;
+  }
+  const { error: insertError } = await supabase.from("friends").insert([
+    { user_id: state.user.id, friend_id: fromUserId },
+    { user_id: fromUserId, friend_id: state.user.id },
+  ]);
+  if (insertError) {
+    console.error("Create friendship:", insertError);
+    return false;
+  }
+  toast("已接受好友请求");
+  loadFriends();
+  loadFriendRequests();
+  return true;
+}
+
+async function rejectFriendRequest(requestId) {
+  const supabase = getSupabase();
+  if (!supabase || !state.user) return false;
+  const { error } = await supabase.from("friend_requests").update({ status: "rejected" }).eq("id", requestId);
+  if (error) {
+    console.error("Reject request:", error);
+    return false;
+  }
+  toast("已拒绝");
+  loadFriendRequests();
+  return true;
+}
+
+async function loadFriends() {
+  const supabase = getSupabase();
+  if (!supabase || !state.user) return;
+  const { data, error } = await supabase.from("friends").select("friend_id").eq("user_id", state.user.id);
+  if (error || !data) {
+    console.warn("Load friends:", error);
+    return;
+  }
+  state.friends = data.map((r) => r.friend_id);
+  if (els.friendCount) els.friendCount.textContent = state.friends.length;
+  renderFriendsList();
+}
+
+async function loadFriendRequests() {
+  const supabase = getSupabase();
+  if (!supabase || !state.user) return;
+  const { data, error } = await supabase
+    .from("friend_requests")
+    .select("id, from_user_id, to_user_id, status, created_at")
+    .or(`to_user_id.eq.${state.user.id},from_user_id.eq.${state.user.id}`)
+    .eq("status", "pending");
+  if (error || !data) {
+    console.warn("Load requests:", error);
+    return;
+  }
+  state.friendRequests = data.filter((r) => r.to_user_id === state.user.id);
+  if (els.requestCount) els.requestCount.textContent = `${state.friendRequests.length} 条待处理`;
+  renderFriendRequests();
+}
+
+async function renderFriendsList() {
+  if (!els.friendsList) return;
+  if (!state.friends.length) {
+    els.friendsList.innerHTML = "<div class=\"listItem\">暂无好友</div>";
+    return;
+  }
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, email, name")
+    .in("id", state.friends);
+  if (error || !users) {
+    console.warn("Load friend users:", error);
+    return;
+  }
+  els.friendsList.innerHTML = users
+    .map((u) => {
+      const name = u.name || u.email?.split("@")[0] || "用户";
+      const email = u.email || "";
+      return `
+        <div class="listItem">
+          <div class="listItem__icon">👤</div>
+          <div class="listItem__meta">
+            <div class="listItem__title">${escapeHtml(name)}</div>
+            <div class="listItem__desc">${escapeHtml(email)}</div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+async function renderFriendRequests() {
+  if (!els.friendRequests) return;
+  if (!state.friendRequests.length) {
+    els.friendRequests.innerHTML = "<div class=\"listItem\">暂无待处理请求</div>";
+    return;
+  }
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const fromIds = state.friendRequests.map((r) => r.from_user_id);
+  const { data: users, error } = await supabase.from("users").select("id, email, name").in("id", fromIds);
+  if (error || !users) {
+    console.warn("Load request users:", error);
+    return;
+  }
+  els.friendRequests.innerHTML = state.friendRequests
+    .map((req) => {
+      const fromUser = users.find((u) => u.id === req.from_user_id);
+      if (!fromUser) return "";
+      const name = fromUser.name || fromUser.email?.split("@")[0] || "用户";
+      return `
+        <div class="listItem">
+          <div class="listItem__icon">👤</div>
+          <div class="listItem__meta">
+            <div class="listItem__title">${escapeHtml(name)}</div>
+            <div class="listItem__desc">想添加你为好友</div>
+          </div>
+          <div class="listItem__actions">
+            <button class="btn btn--primary btn--small" data-action="accept" data-request-id="${req.id}" data-from-id="${req.from_user_id}">接受</button>
+            <button class="btn btn--ghost btn--small" data-action="reject" data-request-id="${req.id}">拒绝</button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+  els.friendRequests.querySelectorAll("[data-action]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const action = btn.getAttribute("data-action");
+      const requestId = btn.getAttribute("data-request-id");
+      if (action === "accept") {
+        const fromId = btn.getAttribute("data-from-id");
+        await acceptFriendRequest(requestId, fromId);
+      } else if (action === "reject") {
+        await rejectFriendRequest(requestId);
+      }
+    });
+  });
+}
+
+async function renderSearchResults(query) {
+  if (!els.searchResults) return;
+  if (!query?.trim()) {
+    els.searchResults.innerHTML = "";
+    return;
+  }
+  els.searchResults.innerHTML = "<div class=\"listItem\">搜索中...</div>";
+  const users = await searchUsers(query);
+  if (users.length === 0) {
+    els.searchResults.innerHTML = "<div class=\"listItem\">未找到用户</div>";
+    return;
+  }
+  const supabase = getSupabase();
+  if (!supabase) return;
+  const { data: requests } = await supabase
+    .from("friend_requests")
+    .select("to_user_id, status")
+    .eq("from_user_id", state.user.id)
+    .eq("status", "pending");
+  const { data: friends } = await supabase.from("friends").select("friend_id").eq("user_id", state.user.id);
+  const sentIds = new Set((requests || []).map((r) => r.to_user_id));
+  const friendIds = new Set((friends || []).map((f) => f.friend_id));
+  els.searchResults.innerHTML = users
+    .map((u) => {
+      const name = u.name || u.email?.split("@")[0] || "用户";
+      const email = u.email || "";
+      const isFriend = friendIds.has(u.id);
+      const hasRequest = sentIds.has(u.id);
+      let actionBtn = "";
+      if (isFriend) {
+        actionBtn = '<span class="muted">已是好友</span>';
+      } else if (hasRequest) {
+        actionBtn = '<span class="muted">已发送请求</span>';
+      } else {
+        actionBtn = `<button class="btn btn--primary btn--small" data-action="add" data-user-id="${u.id}">添加好友</button>`;
+      }
+      return `
+        <div class="listItem">
+          <div class="listItem__icon">👤</div>
+          <div class="listItem__meta">
+            <div class="listItem__title">${escapeHtml(name)}</div>
+            <div class="listItem__desc">${escapeHtml(email)}</div>
+          </div>
+          <div class="listItem__actions">${actionBtn}</div>
+        </div>
+      `;
+    })
+    .join("");
+  els.searchResults.querySelectorAll("[data-action='add']").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const userId = btn.getAttribute("data-user-id");
+      await sendFriendRequest(userId);
+      renderSearchResults(query);
+    });
+  });
+}
+
+function openAuthModal(tab = "login") {
+  if (!els.authModal) return;
+  els.authModal.classList.add("authModal--open");
+  els.authModal.setAttribute("aria-hidden", "false");
+  if (tab === "signup") {
+    switchAuthTab("signup");
+  } else {
+    switchAuthTab("login");
+  }
+}
+
+function closeAuthModal() {
+  if (!els.authModal) return;
+  els.authModal.classList.remove("authModal--open");
+  els.authModal.setAttribute("aria-hidden", "true");
+  if (els.loginError) els.loginError.textContent = "";
+  if (els.signupError) els.signupError.textContent = "";
+  if (els.loginEmail) els.loginEmail.value = "";
+  if (els.loginPassword) els.loginPassword.value = "";
+  if (els.signupEmail) els.signupEmail.value = "";
+  if (els.signupPassword) els.signupPassword.value = "";
+  if (els.signupName) els.signupName.value = "";
+}
+
+function switchAuthTab(tab) {
+  if (tab === "signup") {
+    if (els.authTabLogin) els.authTabLogin.classList.remove("authModal__tab--active");
+    if (els.authTabSignup) els.authTabSignup.classList.add("authModal__tab--active");
+    if (els.authFormLogin) els.authFormLogin.style.display = "none";
+    if (els.authFormSignup) els.authFormSignup.style.display = "block";
+  } else {
+    if (els.authTabLogin) els.authTabLogin.classList.add("authModal__tab--active");
+    if (els.authTabSignup) els.authTabSignup.classList.remove("authModal__tab--active");
+    if (els.authFormLogin) els.authFormLogin.style.display = "block";
+    if (els.authFormSignup) els.authFormSignup.style.display = "none";
+  }
+}
+
+/* ---------------------------
  * 启动
  * --------------------------- */
 function init() {
@@ -1095,6 +1622,24 @@ function init() {
   bgFX.resize();
   bgFX.start();
   bgFX.setBreathing(false);
+
+  // 检查登录状态
+  checkAuthSession();
+
+  // 监听 auth 状态变化
+  const supabase = getSupabase();
+  if (supabase) {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        state.user = session.user;
+        updateUserUI(true);
+        await ensureUserRecord(session.user);
+      } else if (event === "SIGNED_OUT") {
+        state.user = null;
+        updateUserUI(false);
+      }
+    });
+  }
 
   // 仅根据 URL 决定：有 ?mood= 或 #mood 才打开该心情页，否则一律显示首页（不再用 localStorage 恢复）
   const initial = getUrlMood();

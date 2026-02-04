@@ -30,6 +30,13 @@
           <button id="resetBtn" class="btn btn--ghost" type="button" title="気分選択に戻る">
             気分を変える
           </button>
+          <div id="userMenu" class="userMenu">
+            <button id="loginBtn" class="btn btn--ghost" type="button">登录</button>
+            <div id="userInfo" class="userInfo" style="display: none;">
+              <span id="userName" class="userName" style="cursor: pointer;" title="查看个人资料">👤</span>
+              <button id="logoutBtn" class="btn btn--ghost btn--small" type="button">登出</button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -46,6 +53,23 @@
                 <div class="listHead__sub" id="playlistSub">Mood playlist</div>
               </div>
               <div id="trackList" class="list" role="list"></div>
+            </div>
+
+            <div id="userLeft" class="view" aria-label="用户资料">
+              <div class="listHead">
+                <div class="listHead__label">我的资料</div>
+                <div class="listHead__sub" id="userEmail">—</div>
+              </div>
+              <div class="userProfile">
+                <div class="userProfile__avatar">👤</div>
+                <div class="userProfile__name" id="profileName">—</div>
+                <div class="userProfile__stats">
+                  <div class="userProfile__stat">
+                    <span class="userProfile__statLabel">好友</span>
+                    <span class="userProfile__statValue" id="friendCount">0</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -179,6 +203,36 @@
 
               <audio id="audio" preload="auto"></audio>
             </div>
+
+            <div id="userRight" class="view" aria-label="好友管理">
+              <div class="listHead">
+                <div class="listHead__label">好友</div>
+                <div class="listHead__sub">添加和管理好友</div>
+              </div>
+
+              <div class="friendSection">
+                <div class="friendSection__head">
+                  <input id="searchFriend" type="text" placeholder="搜索用户邮箱或用户名..." class="friendSearch" />
+                  <button id="searchFriendBtn" class="btn btn--primary btn--small" type="button">搜索</button>
+                </div>
+                <div id="searchResults" class="friendSearchResults"></div>
+              </div>
+
+              <div class="friendSection">
+                <div class="listHead">
+                  <div class="listHead__label">好友请求</div>
+                  <div class="listHead__sub" id="requestCount">0 条待处理</div>
+                </div>
+                <div id="friendRequests" class="list"></div>
+              </div>
+
+              <div class="friendSection">
+                <div class="listHead">
+                  <div class="listHead__label">我的好友</div>
+                </div>
+                <div id="friendsList" class="list"></div>
+              </div>
+            </div>
           </div>
 
           <div class="vinyl" aria-hidden="true">
@@ -195,6 +249,31 @@
         <span class="muted">UI/UX デモ用の小さなおもちゃ：気分を選ぶ → 曲を流す → 雰囲気を変える</span>
       </footer>
     </main>
+
+    <!-- 登录/注册模态框 -->
+    <div id="authModal" class="authModal" aria-hidden="true">
+      <div class="authModal__backdrop"></div>
+      <div class="authModal__content">
+        <button id="authClose" class="authModal__close" type="button" aria-label="关闭">✕</button>
+        <div class="authModal__tabs">
+          <button id="authTabLogin" class="authModal__tab authModal__tab--active" type="button">登录</button>
+          <button id="authTabSignup" class="authModal__tab" type="button">注册</button>
+        </div>
+        <div id="authFormLogin" class="authModal__form">
+          <input id="loginEmail" type="email" placeholder="邮箱" autocomplete="email" />
+          <input id="loginPassword" type="password" placeholder="密码" autocomplete="current-password" />
+          <button id="loginSubmit" class="btn btn--primary" type="button">登录</button>
+          <div id="loginError" class="authModal__error"></div>
+        </div>
+        <div id="authFormSignup" class="authModal__form" style="display: none;">
+          <input id="signupEmail" type="email" placeholder="邮箱" autocomplete="email" />
+          <input id="signupPassword" type="password" placeholder="密码（至少6位）" autocomplete="new-password" />
+          <input id="signupName" type="text" placeholder="用户名" autocomplete="username" maxlength="20" />
+          <button id="signupSubmit" class="btn btn--primary" type="button">注册</button>
+          <div id="signupError" class="authModal__error"></div>
+        </div>
+      </div>
+    </div>
 
     <script>
       window.MOOD_PLAYER_SUPABASE = {

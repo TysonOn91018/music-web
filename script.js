@@ -113,6 +113,11 @@ const els = {
   logoutBtn: document.getElementById("logoutBtn"),
   userInfo: document.getElementById("userInfo"),
   userName: document.getElementById("userName"),
+  hamburgerMenu: document.getElementById("hamburgerMenu"),
+  userMenu: document.getElementById("userMenu"),
+  homeBtn: document.getElementById("homeBtn"),
+  myPageBtn: document.getElementById("myPageBtn"),
+  backToHomeBtn: document.getElementById("backToHomeBtn"),
   authModal: document.getElementById("authModal"),
   authClose: document.getElementById("authClose"),
   authTabLogin: document.getElementById("authTabLogin"),
@@ -702,7 +707,10 @@ function bind() {
   });
 
   els.chatBtn?.addEventListener("click", () => {
-    if (state.canChat) openChatPanel();
+    if (!state.canChat) return;
+    const isOpen = Boolean(els.chatPanel?.classList.contains("chatPanel--open"));
+    if (isOpen) closeChatPanel();
+    else openChatPanel();
   });
   els.chatClose?.addEventListener("click", closeChatPanel);
   els.chatSend?.addEventListener("click", () => {
@@ -723,9 +731,50 @@ function bind() {
     }
   });
 
+  // 汉堡菜单切换
+  els.hamburgerMenu?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isActive = els.hamburgerMenu?.classList.toggle("active");
+    if (els.userMenu) {
+      els.userMenu.setAttribute("aria-hidden", !isActive);
+    }
+  });
+
+  // 点击外部关闭菜单
+  document.addEventListener("click", (e) => {
+    if (els.hamburgerMenu && els.userMenu && 
+        !els.hamburgerMenu.contains(e.target) && 
+        !els.userMenu.contains(e.target)) {
+      els.hamburgerMenu.classList.remove("active");
+      els.userMenu.setAttribute("aria-hidden", "true");
+    }
+  });
+
+  // 首页按钮
+  els.homeBtn?.addEventListener("click", () => {
+    resetToPick();
+    // 关闭菜单
+    if (els.hamburgerMenu) els.hamburgerMenu.classList.remove("active");
+    if (els.userMenu) els.userMenu.setAttribute("aria-hidden", "true");
+  });
+  
+  // 返回首页按钮（在用户页面）
+  els.backToHomeBtn?.addEventListener("click", () => {
+    resetToPick();
+  });
+
   // 登录系统
   els.loginBtn?.addEventListener("click", () => openAuthModal("login"));
   els.logoutBtn?.addEventListener("click", signOut);
+  
+  // 我的页面按钮
+  els.myPageBtn?.addEventListener("click", () => {
+    showUserPage();
+    // 关闭菜单
+    if (els.hamburgerMenu) els.hamburgerMenu.classList.remove("active");
+    if (els.userMenu) els.userMenu.setAttribute("aria-hidden", "true");
+  });
+  
   els.authClose?.addEventListener("click", closeAuthModal);
   els.authModal?.addEventListener("click", (e) => {
     if (e.target.classList.contains("authModal__backdrop") || e.target.classList.contains("authModal")) {
@@ -1047,7 +1096,33 @@ function chatLoadMessages() {
     .then(({ data, error }) => {
       if (error) {
         console.warn("Supabase chat load:", error);
-        if (els.chatMessages) els.chatMessages.innerHTML = "<div class=\"chatMsg\">加载失败，请检查 Supabase 配置与 chat_messages 表</div>";
+        const errMsg = escapeHtml(String(error.message || "未知错误"));
+        const isAbortLike =
+          String(error.message || "").includes("AbortError") ||
+          String(error.message || "").toLowerCase().includes("aborted") ||
+          String(error.message || "").toLowerCase().includes("failed to fetch");
+        const origin = window.location?.origin || "";
+        const hint = (() => {
+          if (window.location?.protocol === "file:") {
+            return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+          }
+          if (isAbortLike) {
+            return (
+              `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
+              `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
+              `2) 关闭广告拦截/Brave Shields 再试 ` +
+              `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+            );
+          }
+          return "常见原因：1) chat_messages 表未创建 2) 开启了 RLS 但没写 select/insert policy 3) URL/anonKey 不对。";
+        })();
+        if (els.chatMessages) {
+          els.chatMessages.innerHTML =
+            `<div class="chatMsg">` +
+            `<div class="chatMsg__meta">加载失败</div>` +
+            `<div class="chatMsg__text">${errMsg}<br/><span style="opacity:.75">${escapeHtml(hint)}</span></div>` +
+            `</div>`;
+        }
         return;
       }
       if (!data) return;
@@ -1063,7 +1138,34 @@ function chatLoadMessages() {
     })
     .catch((e) => {
       console.warn("Supabase chat load:", e);
-      if (els.chatMessages) els.chatMessages.innerHTML = "<div class=\"chatMsg\">请求失败，请确认 URL/key 正确且表已创建</div>";
+      const errMsg = escapeHtml(String(e?.message || e || "未知错误"));
+      const isAbortLike =
+        String(e?.name || "").includes("AbortError") ||
+        String(e?.message || "").includes("AbortError") ||
+        String(e?.message || "").toLowerCase().includes("aborted") ||
+        String(e?.message || "").toLowerCase().includes("failed to fetch");
+      const origin = window.location?.origin || "";
+      const hint = (() => {
+        if (window.location?.protocol === "file:") {
+          return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+        }
+        if (isAbortLike) {
+          return (
+            `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
+            `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
+            `2) 关闭广告拦截/Brave Shields 再试 ` +
+            `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+          );
+        }
+        return "请确认：Supabase URL/anonKey 正确、chat_messages 表已创建、（若启用 RLS）已添加允许 select/insert 的 policy。";
+      })();
+      if (els.chatMessages) {
+        els.chatMessages.innerHTML =
+          `<div class="chatMsg">` +
+          `<div class="chatMsg__meta">请求失败</div>` +
+          `<div class="chatMsg__text">${errMsg}<br/><span style="opacity:.75">${escapeHtml(hint)}</span></div>` +
+          `</div>`;
+      }
     });
 }
 
@@ -1231,11 +1333,16 @@ async function ensureUserRecord(user) {
   const supabase = getSupabase();
   if (!supabase) return;
   const name = user.user_metadata?.name || user.email?.split("@")[0] || "用户";
-  await supabase.from("users").upsert({
+  const { data, error } = await supabase.from("users").upsert({
     id: user.id,
     email: user.email,
     name: name,
   });
+  if (error) {
+    console.error("创建用户记录失败:", error);
+  } else {
+    console.log("用户记录已创建/更新:", data);
+  }
 }
 
 async function signUp(email, password, name) {
@@ -1296,14 +1403,31 @@ async function signIn(email, password) {
 }
 
 async function signOut() {
-  const supabase = getSupabase();
-  if (supabase) {
-    await supabase.auth.signOut();
+  try {
+    const supabase = getSupabase();
+    if (supabase) {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("登出失败:", error);
+        toast("登出失败: " + error.message);
+        return;
+      }
+    }
+    state.user = null;
+    updateUserUI(false);
+    chatLeaveRoom();
+    toast("已登出");
+    
+    // 返回首页
+    resetToPick();
+  } catch (error) {
+    console.error("登出异常:", error);
+    // 即使出错也清除本地状态
+    state.user = null;
+    updateUserUI(false);
+    toast("已登出");
+    resetToPick();
   }
-  state.user = null;
-  updateUserUI(false);
-  chatLeaveRoom();
-  toast("已登出");
 }
 
 function updateUserUI(isLoggedIn) {
@@ -1313,9 +1437,13 @@ function updateUserUI(isLoggedIn) {
     els.userInfo.style.display = "flex";
     const name = state.user?.user_metadata?.name || state.user?.email?.split("@")[0] || "用户";
     els.userName.textContent = name;
+    // 显示我的页面按钮
+    if (els.myPageBtn) els.myPageBtn.style.display = "block";
   } else {
     els.loginBtn.style.display = "block";
     els.userInfo.style.display = "none";
+    // 隐藏我的页面按钮
+    if (els.myPageBtn) els.myPageBtn.style.display = "none";
   }
 }
 
@@ -1334,23 +1462,78 @@ function loadUserProfile() {
 async function searchUsers(query) {
   if (!query?.trim()) return [];
   const supabase = getSupabase();
-  if (!supabase || !state.user) return [];
-  const q = query.trim().toLowerCase();
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, email, name")
-    .or(`email.ilike.%${q}%,name.ilike.%${q}%`)
-    .neq("id", state.user.id)
-    .limit(10);
-  if (error || !data) {
-    console.warn("Search users:", error);
+  if (!supabase || !state.user) {
+    console.warn("Search users: Supabase not initialized or user not logged in");
     return [];
   }
-  return data.map((u) => ({
-    id: u.id,
-    email: u.email,
-    user_metadata: { name: u.name },
-  }));
+  const q = query.trim();
+  
+  try {
+    console.log("开始搜索用户:", q, "当前用户ID:", state.user.id);
+    
+    // 分别查询邮箱和用户名
+    const emailResult = await supabase
+      .from("users")
+      .select("id, email, name")
+      .ilike("email", `%${q}%`)
+      .neq("id", state.user.id)
+      .limit(10);
+    
+    console.log("邮箱搜索结果:", emailResult);
+    
+    if (emailResult.error) {
+      console.error("邮箱搜索错误:", emailResult.error);
+      // 如果是 RLS 错误，提供更友好的提示
+      if (emailResult.error.code === '42501') {
+        throw new Error("RLS 策略问题：请确保 'Users can view all users' 策略已设置");
+      }
+    }
+    
+    const nameResult = await supabase
+      .from("users")
+      .select("id, email, name")
+      .ilike("name", `%${q}%`)
+      .neq("id", state.user.id)
+      .limit(10);
+    
+    console.log("用户名搜索结果:", nameResult);
+    
+    if (nameResult.error) {
+      console.error("用户名搜索错误:", nameResult.error);
+    }
+    
+    // 合并结果并去重
+    const usersMap = new Map();
+    
+    if (emailResult.data && Array.isArray(emailResult.data)) {
+      emailResult.data.forEach(user => {
+        if (user && user.id) {
+          usersMap.set(user.id, user);
+        }
+      });
+    }
+    
+    if (nameResult.data && Array.isArray(nameResult.data)) {
+      nameResult.data.forEach(user => {
+        if (user && user.id) {
+          usersMap.set(user.id, user);
+        }
+      });
+    }
+    
+    const results = Array.from(usersMap.values());
+    console.log("合并后的搜索结果:", results);
+    
+    return results.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      user_metadata: { name: u.name },
+    }));
+  } catch (error) {
+    console.error("搜索用户异常:", error);
+    throw error; // 重新抛出以便上层处理
+  }
 }
 
 async function sendFriendRequest(toUserId) {
@@ -1490,12 +1673,13 @@ async function renderFriendRequests() {
       const fromUser = users.find((u) => u.id === req.from_user_id);
       if (!fromUser) return "";
       const name = fromUser.name || fromUser.email?.split("@")[0] || "用户";
+      const email = fromUser.email || "";
       return `
         <div class="listItem">
           <div class="listItem__icon">👤</div>
           <div class="listItem__meta">
             <div class="listItem__title">${escapeHtml(name)}</div>
-            <div class="listItem__desc">想添加你为好友</div>
+            <div class="listItem__desc">${escapeHtml(email)}</div>
           </div>
           <div class="listItem__actions">
             <button class="btn btn--primary btn--small" data-action="accept" data-request-id="${req.id}" data-from-id="${req.from_user_id}">接受</button>
@@ -1526,24 +1710,53 @@ async function renderSearchResults(query) {
     return;
   }
   els.searchResults.innerHTML = "<div class=\"listItem\">搜索中...</div>";
-  const users = await searchUsers(query);
-  if (users.length === 0) {
-    els.searchResults.innerHTML = "<div class=\"listItem\">未找到用户</div>";
+  
+  // 检查用户是否登录
+  if (!state.user) {
+    els.searchResults.innerHTML = "<div class=\"listItem\">请先登录</div>";
     return;
   }
+  
   const supabase = getSupabase();
-  if (!supabase) return;
-  const { data: requests } = await supabase
-    .from("friend_requests")
-    .select("to_user_id, status")
-    .eq("from_user_id", state.user.id)
-    .eq("status", "pending");
-  const { data: friends } = await supabase.from("friends").select("friend_id").eq("user_id", state.user.id);
-  const sentIds = new Set((requests || []).map((r) => r.to_user_id));
-  const friendIds = new Set((friends || []).map((f) => f.friend_id));
+  if (!supabase) {
+    els.searchResults.innerHTML = "<div class=\"listItem\">Supabase 未初始化</div>";
+    return;
+  }
+  
+  let users = [];
+  try {
+    users = await searchUsers(query);
+    console.log("搜索结果:", users, "查询:", query);
+    
+    if (users.length === 0) {
+      els.searchResults.innerHTML = "<div class=\"listItem\">未找到用户<br/><small style='opacity:0.6;font-size:0.85rem;margin-top:8px;display:block;'>可能的原因：<br/>1. 用户可能还未注册<br/>2. 邮箱/用户名不匹配<br/>3. 请检查浏览器控制台查看详细错误信息</small></div>";
+      return;
+    }
+  } catch (error) {
+    console.error("搜索出错:", error);
+    els.searchResults.innerHTML = "<div class=\"listItem\">搜索出错: " + (error.message || "未知错误") + "<br/><small style='opacity:0.6;font-size:0.85rem;margin-top:8px;display:block;'>请检查浏览器控制台查看详细错误</small></div>";
+    return;
+  }
+  
+  // 获取好友请求和好友列表（用于判断状态）
+  let sentIds = new Set();
+  let friendIds = new Set();
+  
+  try {
+    const { data: requests } = await supabase
+      .from("friend_requests")
+      .select("to_user_id, status")
+      .eq("from_user_id", state.user.id)
+      .eq("status", "pending");
+    const { data: friends } = await supabase.from("friends").select("friend_id").eq("user_id", state.user.id);
+    sentIds = new Set((requests || []).map((r) => r.to_user_id));
+    friendIds = new Set((friends || []).map((f) => f.friend_id));
+  } catch (error) {
+    console.warn("获取好友状态失败:", error);
+  }
   els.searchResults.innerHTML = users
     .map((u) => {
-      const name = u.name || u.email?.split("@")[0] || "用户";
+      const name = u.name || u.user_metadata?.name || u.email?.split("@")[0] || "用户";
       const email = u.email || "";
       const isFriend = friendIds.has(u.id);
       const hasRequest = sentIds.has(u.id);
@@ -1623,9 +1836,17 @@ function init() {
   bgFX.start();
   bgFX.setBreathing(false);
 
+  // 保持滑动提示始终显示（不再自动隐藏）
+  const swipeHint = document.getElementById("swipeHint");
+  if (swipeHint) {
+    // 确保提示始终显示
+    swipeHint.style.display = "flex";
+    swipeHint.classList.remove("hidden");
+  }
+
   // 检查登录状态
   checkAuthSession();
-
+  
   // 监听 auth 状态变化
   const supabase = getSupabase();
   if (supabase) {

@@ -16,29 +16,6 @@
     </div>
 
     <main class="app">
-      <header class="topbar">
-        <div class="brand" aria-label="気分ジュークボックス">
-          <span class="brand__dot" aria-hidden="true"></span>
-          <span class="brand__name">気分ジュークボックス</span>
-          <span class="brand__sub">Mood Player</span>
-        </div>
-
-        <div class="topbar__actions">
-          <button id="shareBtn" class="btn btn--ghost" type="button" title="今の気分のリンクをコピー">
-            リンクをコピー
-          </button>
-          <button id="resetBtn" class="btn btn--ghost" type="button" title="気分選択に戻る">
-            気分を変える
-          </button>
-          <div id="userMenu" class="userMenu">
-            <button id="loginBtn" class="btn btn--ghost" type="button">登录</button>
-            <div id="userInfo" class="userInfo" style="display: none;">
-              <span id="userName" class="userName" style="cursor: pointer;" title="查看个人资料">👤</span>
-              <button id="logoutBtn" class="btn btn--ghost btn--small" type="button">登出</button>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <section class="panel">
         <div id="burst" class="burst" aria-hidden="true"></div>
@@ -57,6 +34,7 @@
 
             <div id="userLeft" class="view" aria-label="用户资料">
               <div class="listHead">
+                <button id="backToHomeBtn" class="btn btn--ghost btn--back" type="button" style="margin-bottom: 12px;">← 返回首页</button>
                 <div class="listHead__label">我的资料</div>
                 <div class="listHead__sub" id="userEmail">—</div>
               </div>
@@ -77,10 +55,19 @@
             <div id="pickRight" class="view view--active">
               <div class="indexTopNav">
                 <div class="indexBrand">Mood Player</div>
-                <div class="indexNav">
-                  <span>ARTISTS</span>
-                  <span>MIXTAPES</span>
-                  <span>AWARDS</span>
+                <button id="hamburgerMenu" class="hamburgerMenu" type="button" aria-label="菜单">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </button>
+                <div id="userMenu" class="userMenu userMenu--dropdown" aria-hidden="true">
+                  <button id="homeBtn" class="btn btn--ghost" type="button">首页</button>
+                  <button id="loginBtn" class="btn btn--ghost" type="button">登录</button>
+                  <div id="userInfo" class="userInfo" style="display: none;">
+                    <button id="myPageBtn" class="btn btn--ghost" type="button">我的页面</button>
+                    <span id="userName" class="userName" style="cursor: pointer;" title="查看个人资料">👤</span>
+                    <button id="logoutBtn" class="btn btn--ghost btn--small" type="button">登出</button>
+                  </div>
                 </div>
               </div>
 
@@ -141,6 +128,10 @@
                     </div>
                   </button>
                 </div>
+                <div class="swipeHint" id="swipeHint">
+                  <span class="swipeHint__arrow">↓</span>
+                  <span class="swipeHint__text">スワイプしてさらに見る</span>
+                </div>
               </div>
             </div>
 
@@ -179,6 +170,16 @@
                 <button id="backBtn" class="btn btn--back" type="button" title="返回选心情">← 返回选心情</button>
               </div>
 
+              <div class="progress progress--wide" aria-label="再生状況">
+                <div id="progressBar" class="progress__bar" role="slider" aria-valuemin="0" aria-valuemax="100" tabindex="0">
+                  <div id="progressInner" class="progress__inner"></div>
+                </div>
+                <div class="progress__meta">
+                  <span id="timeNow">0:00</span>
+                  <span id="timeDur">0:00</span>
+                </div>
+              </div>
+
               <div id="chatPanel" class="chatPanel" aria-hidden="true">
                 <div class="chatPanel__head">
                   <span class="chatPanel__title">同听这首歌的人</span>
@@ -188,16 +189,6 @@
                 <div class="chatPanel__inputWrap">
                   <input id="chatInput" type="text" placeholder="说点什么…" maxlength="500" autocomplete="off" />
                   <button id="chatSend" class="btn btn--primary" type="button">发送</button>
-                </div>
-              </div>
-
-              <div class="progress progress--wide" aria-label="再生状況">
-                <div id="progressBar" class="progress__bar" role="slider" aria-valuemin="0" aria-valuemax="100" tabindex="0">
-                  <div id="progressInner" class="progress__inner"></div>
-                </div>
-                <div class="progress__meta">
-                  <span id="timeNow">0:00</span>
-                  <span id="timeDur">0:00</span>
                 </div>
               </div>
 

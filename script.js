@@ -13,52 +13,138 @@ function getAssetPath(filename) {
 const TRACK_FILE = "chill 01.mp3";
 const TRACK_URL = getAssetPath(TRACK_FILE);
 
+// デフォルト tracks（txt ファイルの読み込みに失敗した場合に使用）
+const DEFAULT_TRACKS = [{ title: "夜に溶けるまま", url: getAssetPath(TRACK_FILE) }];
+
+// Mood 到歌曲文件的映射
+const MOOD_TRACK_FILES = {
+  relax: 'chill.txt',      // 😌 放松 -> chill.txt
+  heartbreak: 'slow.txt',   // 💔 失恋 -> slow.txt
+  hype: 'edm.txt',          // 🔥 想燃起来 -> edm.txt
+  quiet: 'piano.txt',       // 🌧 想安静一下 -> piano.txt
+  love: 'citypop.txt',      // 💗 恋 -> citypop.txt
+  fun: 'pop.txt',           // 🎉 楽し -> pop.txt
+};
+
 const MOODS = {
   relax: {
-    tag: "😌 放松",
-    copy: ["放轻松，先深呼吸一下。", "把肩膀放下来，今天也辛苦了。", "这首歌，送给需要休息的你。"],
+    tag: "😌 リラックス",
+    copy: ["肩の力を抜いて、まずは深呼吸。", "肩を下ろして、今日もお疲れ様。", "この曲を、休みが必要なあなたに。"],
     particles: { speed: 0.35, drift: 0.25, size: [1.2, 3.2], count: 56 },
-    tracks: [{ title: "夜に溶けるまま", url: getAssetPath(TRACK_FILE) }],
+    tracks: DEFAULT_TRACKS, // 対応する txt ファイルを読み込んだ後に更新
   },
   heartbreak: {
     tag: "💔 失恋",
-    copy: ["没关系，先难过一会儿也可以。", "我懂，你不需要解释。", "听完这首，再决定要不要原谅今天。"],
+    copy: ["大丈夫、しばらく悲しんでもいい。", "わかるよ、説明しなくていい。", "この曲を聴いてから、今日を許すかどうか決めよう。"],
     particles: { speed: 0.55, drift: 0.18, size: [1.0, 2.6], count: 70 },
-    tracks: [{ title: "夜に溶けるまま", url: getAssetPath(TRACK_FILE) }],
+    tracks: DEFAULT_TRACKS, // 対応する txt ファイルを読み込んだ後に更新
   },
   hype: {
-    tag: "🔥 想燃起来",
-    copy: ["把音量调大一点。", "今天就该是主角。", "让心跳替你倒数：3，2，1。"],
+    tag: "🔥 アガりたい",
+    copy: ["音量を上げて。", "今日こそ主役だ。", "心拍にカウントダウンを任せて：3、2、1。"],
     particles: { speed: 1.25, drift: 0.42, size: [1.4, 4.2], count: 92 },
-    tracks: [{ title: "夜に溶けるまま", url: getAssetPath(TRACK_FILE) }],
+    tracks: DEFAULT_TRACKS, // 対応する txt ファイルを読み込んだ後に更新
   },
   quiet: {
-    tag: "🌧 想安静一下",
-    copy: ["安静也很好，世界可以先慢一点。", "就让这一首，陪你走一段路。", "不用说话，音乐会懂。"],
+    tag: "🌧 静かにしたい",
+    copy: ["静かでいい、世界は少しゆっくりでもいい。", "この一曲で、少しの間一緒に歩こう。", "言葉はいらない、音楽がわかってくれる。"],
     particles: { speed: 0.45, drift: 0.14, size: [1.0, 2.8], count: 64 },
-    tracks: [{ title: "夜に溶けるまま", url: getAssetPath(TRACK_FILE) }],
+    tracks: DEFAULT_TRACKS, // 対応する txt ファイルを読み込んだ後に更新
   },
   love: {
     tag: "💗 恋",
     copy: [
-      "想到那个人的时候，心里会不会有点甜？",
-      "喜欢一个人，就是总想多看一眼。",
-      "这首歌，算是小小的告白练习。"
+      "あの人のことを考えると、心が少し甘くなる？",
+      "好きな人を、いつももう一度見たくなる。",
+      "この曲は、小さな告白の練習。"
     ],
     particles: { speed: 0.55, drift: 0.24, size: [1.2, 3.0], count: 70 },
-    tracks: [{ title: "夜に溶けるまま", url: getAssetPath(TRACK_FILE) }],
+    tracks: DEFAULT_TRACKS, // 対応する txt ファイルを読み込んだ後に更新
   },
   fun: {
     tag: "🎉 楽し",
     copy: [
-      "今天就先别酷了，开心最重要。",
-      "跟喜欢的人一起笑一笑，比什么都治愈。",
-      "这首歌适合边点头边乱跳。"
+      "今日はクールをやめて、楽しむことが一番。",
+      "好きな人と一緒に笑うと、何より癒される。",
+      "この曲は、うなずきながら踊るのにぴったり。"
     ],
     particles: { speed: 0.9, drift: 0.36, size: [1.4, 3.6], count: 88 },
-    tracks: [{ title: "夜に溶けるまま", url: getAssetPath(TRACK_FILE) }],
+    tracks: DEFAULT_TRACKS, // 対応する txt ファイルを読み込んだ後に更新
   },
 };
+
+/**
+ * 从指定的 txt 文件加载歌曲 URL 列表
+ * 文件格式：每行一个 URL
+ * @param {string} filename - 要加载的文件名（例如 'chill.txt'）
+ * @returns {Promise<Array<{title: string, url: string}>>} 返回 tracks 数组
+ */
+async function loadTracksFromFile(filename) {
+  try {
+    const response = await fetch(filename);
+    if (!response.ok) {
+      console.warn(`${filename} を読み込めませんでした。デフォルト曲を使用します。`);
+      return DEFAULT_TRACKS;
+    }
+    
+    const text = await response.text();
+    const urls = text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line && line.startsWith('http')); // 有効な URL のみ保持
+    
+    if (urls.length === 0) {
+      console.warn(`${filename} に有効な URL が見つかりませんでした。デフォルト曲を使用します。`);
+      return DEFAULT_TRACKS;
+    }
+    
+    // URL を tracks 形式に変換
+    const tracks = urls.map((url, index) => {
+      // URL からファイル名を抽出してタイトルにする
+      const urlMatch = url.match(/\/([^\/]+)\.mp3/);
+      let title = `曲 ${String(index + 1).padStart(2, '0')}`;
+      if (urlMatch) {
+        // URL エンコードされたファイル名をデコード
+        try {
+          title = decodeURIComponent(urlMatch[1]);
+          // 可能なパスプレフィックスを削除
+          title = title.replace(/^Title_/, '').replace(/^chill_\d+_/, '');
+        } catch (e) {
+          // デコードに失敗した場合、元のファイル名を使用
+          title = urlMatch[1].replace(/\.mp3$/, '');
+        }
+      }
+      return { title, url };
+    });
+    
+    console.log(`${filename} から ${tracks.length} 曲を正常に読み込みました`);
+    return tracks;
+  } catch (error) {
+    console.error(`${filename} の読み込みに失敗しました:`, error);
+    return DEFAULT_TRACKS;
+  }
+}
+
+/**
+ * 为所有 mood 加载对应的歌曲列表
+ * 根据 MOOD_TRACK_FILES 映射加载每个 mood 对应的 txt 文件
+ */
+async function loadAllMoodTracks() {
+  const loadPromises = Object.keys(MOODS).map(async (moodKey) => {
+    const filename = MOOD_TRACK_FILES[moodKey];
+    if (filename) {
+      const tracks = await loadTracksFromFile(filename);
+      MOODS[moodKey].tracks = tracks;
+      console.log(`${moodKey} (${MOODS[moodKey].tag}) に ${tracks.length} 曲を読み込みました`);
+    } else {
+      console.warn(`${moodKey} の曲ファイルマッピングが見つかりませんでした。デフォルト曲を使用します。`);
+      MOODS[moodKey].tracks = DEFAULT_TRACKS;
+    }
+  });
+  
+  await Promise.all(loadPromises);
+  console.log('すべての mood の曲リストの読み込みが完了しました');
+}
 
 const STORAGE_KEY = "mood-player:lastMood";
 
@@ -138,13 +224,6 @@ const els = {
   userName: document.getElementById("userName"),
   userEmail: document.getElementById("userEmail"),
   profileName: document.getElementById("profileName"),
-  friendCount: document.getElementById("friendCount"),
-  searchFriend: document.getElementById("searchFriend"),
-  searchFriendBtn: document.getElementById("searchFriendBtn"),
-  searchResults: document.getElementById("searchResults"),
-  friendRequests: document.getElementById("friendRequests"),
-  requestCount: document.getElementById("requestCount"),
-  friendsList: document.getElementById("friendsList"),
 };
 
 let state = {
@@ -157,8 +236,6 @@ let state = {
   canChat: false,
   chatRoomId: null,
   user: null,
-  friends: [],
-  friendRequests: [],
 };
 
 /* ---------------------------
@@ -207,8 +284,6 @@ function showUserPage() {
   document.body.classList.add("is-user");
   bgFX.setBreathing(false);
   loadUserProfile();
-  loadFriends();
-  loadFriendRequests();
 }
 
 /* ---------------------------
@@ -425,10 +500,10 @@ async function copyShareLink() {
 
   try {
     await navigator.clipboard.writeText(text);
-    toast("已复制链接");
+    toast("リンクをコピーしました");
   } catch {
-    // 回退：prompt 让用户手动复制
-    window.prompt("复制这个链接：", text);
+    // フォールバック：ユーザーに手動でコピーしてもらう
+    window.prompt("このリンクをコピーしてください：", text);
   }
 }
 
@@ -765,7 +840,12 @@ function bind() {
 
   // 登录系统
   els.loginBtn?.addEventListener("click", () => openAuthModal("login"));
-  els.logoutBtn?.addEventListener("click", signOut);
+  els.logoutBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("登出按钮被点击");
+    await signOut();
+  });
   
   // 我的页面按钮
   els.myPageBtn?.addEventListener("click", () => {
@@ -815,16 +895,6 @@ function bind() {
 
   // 用户页面
   els.userName?.addEventListener("click", showUserPage);
-  els.searchFriendBtn?.addEventListener("click", async () => {
-    const q = els.searchFriend?.value?.trim();
-    await renderSearchResults(q);
-  });
-  els.searchFriend?.addEventListener("keydown", async (e) => {
-    if (e.key === "Enter") {
-      const q = els.searchFriend?.value?.trim();
-      await renderSearchResults(q);
-    }
-  });
 
   els.backLink?.addEventListener("click", (e) => {
     e.preventDefault();
@@ -865,7 +935,7 @@ function bind() {
   });
   els.audio.addEventListener("error", () => {
     setPlayBtn(false);
-    toast("无法播放音频，请确认 music 文件夹内有 MP3 并用本地服务器打开（如 npx serve .）");
+    toast("オーディオを再生できません。music フォルダに MP3 があることを確認し、ローカルサーバーで開いてください（例：npx serve .）");
   });
 
   window.addEventListener("keydown", (e) => {
@@ -918,7 +988,7 @@ function resetToPick() {
   if (els.leftPill) els.leftPill.textContent = "Select mood";
   chatLeaveRoom();
   closeChatPanel();
-  toast("已返回选择心情");
+  toast("気分を選ぶ画面に戻りました");
 }
 
 /* ---------------------------
@@ -1041,18 +1111,18 @@ function chatJoinRoom() {
           console.log("[Chat] Presence tracked");
         } catch (e) {
           console.error("[Chat] Presence track error:", e);
-          toast("Presence 上报失败：" + (e.message || e));
+          toast("Presence の送信に失敗しました：" + (e.message || e));
         }
       }
       if (status === "CHANNEL_ERROR") {
         console.error("[Chat] Channel error");
-        updateChatButton(false, "Supabase 连接失败，请检查控制台错误或 Supabase 设置");
-        toast("Supabase 连接异常 - 请检查：1) Supabase → Settings → API → 是否允许你的域名 2) 浏览器控制台错误");
+        updateChatButton(false, "Supabase 接続に失敗しました。コンソールエラーまたは Supabase 設定を確認してください");
+        toast("Supabase 接続異常 - 確認してください：1) Supabase → Settings → API → あなたのドメインが許可されているか 2) ブラウザコンソールエラー");
       }
       if (status === "TIMED_OUT" || status === "CLOSED") {
         console.warn("[Chat] Channel closed/timed out:", status);
-        updateChatButton(false, "连接超时 - 检查网络或 Supabase Realtime 设置");
-        toast("Supabase 连接超时，请检查网络或 Realtime 是否启用");
+        updateChatButton(false, "接続タイムアウト - ネットワークまたは Supabase Realtime 設定を確認してください");
+        toast("Supabase 接続がタイムアウトしました。ネットワークまたは Realtime が有効になっているか確認してください");
       }
     });
 }
@@ -1332,23 +1402,23 @@ async function checkAuthSession() {
 async function ensureUserRecord(user) {
   const supabase = getSupabase();
   if (!supabase) return;
-  const name = user.user_metadata?.name || user.email?.split("@")[0] || "用户";
+  const name = user.user_metadata?.name || user.email?.split("@")[0] || "ユーザー";
   const { data, error } = await supabase.from("users").upsert({
     id: user.id,
     email: user.email,
     name: name,
   });
   if (error) {
-    console.error("创建用户记录失败:", error);
+    console.error("ユーザーレコードの作成に失敗しました:", error);
   } else {
-    console.log("用户记录已创建/更新:", data);
+    console.log("ユーザーレコードを作成/更新しました:", data);
   }
 }
 
 async function signUp(email, password, name) {
   const supabase = getSupabase();
   if (!supabase) {
-    toast("Supabase 未配置");
+    toast("Supabase が設定されていません");
     return false;
   }
   const { data, error } = await supabase.auth.signUp({
@@ -1371,7 +1441,7 @@ async function signUp(email, password, name) {
     });
   }
   if (els.signupError) els.signupError.textContent = "";
-  toast("注册成功！请检查邮箱验证链接");
+  toast("登録に成功しました！メールの確認リンクを確認してください");
   closeAuthModal();
   return true;
 }
@@ -1379,7 +1449,7 @@ async function signUp(email, password, name) {
 async function signIn(email, password) {
   const supabase = getSupabase();
   if (!supabase) {
-    toast("Supabase 未配置");
+    toast("Supabase が設定されていません");
     return false;
   }
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -1395,7 +1465,7 @@ async function signIn(email, password) {
     updateUserUI(true);
     await ensureUserRecord(data.user);
     if (els.loginError) els.loginError.textContent = "";
-    toast("登录成功");
+    toast("ログインに成功しました");
     closeAuthModal();
     return true;
   }
@@ -1403,30 +1473,63 @@ async function signIn(email, password) {
 }
 
 async function signOut() {
+  console.log("ログアウトボタンがクリックされました");
+  
+  // ローカル状態を先にクリア（Supabase ログアウトの成功/失敗に関係なく）
+  const clearLocalState = () => {
+  state.user = null;
+  updateUserUI(false);
+  chatLeaveRoom();
+    
+    // メニューを閉じる
+    if (els.hamburgerMenu) els.hamburgerMenu.classList.remove("active");
+    if (els.userMenu) els.userMenu.setAttribute("aria-hidden", "true");
+    
+    // ホームに戻る
+    if (typeof resetToPick === 'function') {
+      resetToPick();
+    } else if (typeof showPick === 'function') {
+      showPick();
+    }
+    
+  toast("ログアウトしました");
+    console.log("ローカル状態をクリアしました");
+  };
+  
   try {
     const supabase = getSupabase();
     if (supabase) {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("登出失败:", error);
-        toast("登出失败: " + error.message);
-        return;
+      console.log("Supabase ログアウトを開始...");
+      
+      // タイムアウト処理を追加（2秒、タイムアウトした場合はスキップ）
+      const signOutPromise = supabase.auth.signOut();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("ログアウトタイムアウト")), 2000)
+      );
+      
+      try {
+        const { error } = await Promise.race([signOutPromise, timeoutPromise]);
+        if (error) {
+          console.warn("Supabase ログアウトに失敗しました:", error.message);
+          // Supabase ログアウトに失敗しても、ローカル状態のクリアを続行
+        } else {
+          console.log("Supabase ログアウトに成功しました");
+        }
+      } catch (timeoutError) {
+        console.warn("Supabase ログアウトがタイムアウトしました。ローカル状態のクリアを続行します");
+        // タイムアウトしてもローカル状態のクリアには影響しない
       }
+    } else {
+      console.warn("Supabase が初期化されていません。ローカル状態のみクリアします");
     }
-    state.user = null;
-    updateUserUI(false);
-    chatLeaveRoom();
-    toast("已登出");
     
-    // 返回首页
-    resetToPick();
+    // ローカル状態をクリア
+    clearLocalState();
+    console.log("ログアウトが完了しました");
   } catch (error) {
-    console.error("登出异常:", error);
-    // 即使出错也清除本地状态
-    state.user = null;
-    updateUserUI(false);
-    toast("已登出");
-    resetToPick();
+    console.error("ログアウトでエラーが発生しました:", error);
+    // エラーが発生してもローカル状態をクリア
+    clearLocalState();
   }
 }
 
@@ -1435,7 +1538,7 @@ function updateUserUI(isLoggedIn) {
   if (isLoggedIn) {
     els.loginBtn.style.display = "none";
     els.userInfo.style.display = "flex";
-    const name = state.user?.user_metadata?.name || state.user?.email?.split("@")[0] || "用户";
+    const name = state.user?.user_metadata?.name || state.user?.email?.split("@")[0] || "ユーザー";
     els.userName.textContent = name;
     // 显示我的页面按钮
     if (els.myPageBtn) els.myPageBtn.style.display = "block";
@@ -1455,339 +1558,6 @@ function loadUserProfile() {
   if (els.userEmail) els.userEmail.textContent = email;
 }
 
-/* ---------------------------
- * 好友系统
- * 注意：需要在 Supabase 创建 users 表存储用户信息（email, name）
- * --------------------------- */
-async function searchUsers(query) {
-  if (!query?.trim()) return [];
-  const supabase = getSupabase();
-  if (!supabase || !state.user) {
-    console.warn("Search users: Supabase not initialized or user not logged in");
-    return [];
-  }
-  const q = query.trim();
-  
-  try {
-    console.log("开始搜索用户:", q, "当前用户ID:", state.user.id);
-    
-    // 分别查询邮箱和用户名
-    const emailResult = await supabase
-      .from("users")
-      .select("id, email, name")
-      .ilike("email", `%${q}%`)
-      .neq("id", state.user.id)
-      .limit(10);
-    
-    console.log("邮箱搜索结果:", emailResult);
-    
-    if (emailResult.error) {
-      console.error("邮箱搜索错误:", emailResult.error);
-      // 如果是 RLS 错误，提供更友好的提示
-      if (emailResult.error.code === '42501') {
-        throw new Error("RLS 策略问题：请确保 'Users can view all users' 策略已设置");
-      }
-    }
-    
-    const nameResult = await supabase
-      .from("users")
-      .select("id, email, name")
-      .ilike("name", `%${q}%`)
-      .neq("id", state.user.id)
-      .limit(10);
-    
-    console.log("用户名搜索结果:", nameResult);
-    
-    if (nameResult.error) {
-      console.error("用户名搜索错误:", nameResult.error);
-    }
-    
-    // 合并结果并去重
-    const usersMap = new Map();
-    
-    if (emailResult.data && Array.isArray(emailResult.data)) {
-      emailResult.data.forEach(user => {
-        if (user && user.id) {
-          usersMap.set(user.id, user);
-        }
-      });
-    }
-    
-    if (nameResult.data && Array.isArray(nameResult.data)) {
-      nameResult.data.forEach(user => {
-        if (user && user.id) {
-          usersMap.set(user.id, user);
-        }
-      });
-    }
-    
-    const results = Array.from(usersMap.values());
-    console.log("合并后的搜索结果:", results);
-    
-    return results.map((u) => ({
-      id: u.id,
-      email: u.email,
-      name: u.name,
-      user_metadata: { name: u.name },
-    }));
-  } catch (error) {
-    console.error("搜索用户异常:", error);
-    throw error; // 重新抛出以便上层处理
-  }
-}
-
-async function sendFriendRequest(toUserId) {
-  const supabase = getSupabase();
-  if (!supabase || !state.user) return false;
-  const { error } = await supabase.from("friend_requests").insert({
-    from_user_id: state.user.id,
-    to_user_id: toUserId,
-    status: "pending",
-  });
-  if (error) {
-    console.error("Send friend request:", error);
-    toast("发送失败：" + (error.message || "未知错误"));
-    return false;
-  }
-  toast("好友请求已发送");
-  return true;
-}
-
-async function acceptFriendRequest(requestId, fromUserId) {
-  const supabase = getSupabase();
-  if (!supabase || !state.user) return false;
-  const { error: updateError } = await supabase
-    .from("friend_requests")
-    .update({ status: "accepted" })
-    .eq("id", requestId);
-  if (updateError) {
-    console.error("Accept request:", updateError);
-    return false;
-  }
-  const { error: insertError } = await supabase.from("friends").insert([
-    { user_id: state.user.id, friend_id: fromUserId },
-    { user_id: fromUserId, friend_id: state.user.id },
-  ]);
-  if (insertError) {
-    console.error("Create friendship:", insertError);
-    return false;
-  }
-  toast("已接受好友请求");
-  loadFriends();
-  loadFriendRequests();
-  return true;
-}
-
-async function rejectFriendRequest(requestId) {
-  const supabase = getSupabase();
-  if (!supabase || !state.user) return false;
-  const { error } = await supabase.from("friend_requests").update({ status: "rejected" }).eq("id", requestId);
-  if (error) {
-    console.error("Reject request:", error);
-    return false;
-  }
-  toast("已拒绝");
-  loadFriendRequests();
-  return true;
-}
-
-async function loadFriends() {
-  const supabase = getSupabase();
-  if (!supabase || !state.user) return;
-  const { data, error } = await supabase.from("friends").select("friend_id").eq("user_id", state.user.id);
-  if (error || !data) {
-    console.warn("Load friends:", error);
-    return;
-  }
-  state.friends = data.map((r) => r.friend_id);
-  if (els.friendCount) els.friendCount.textContent = state.friends.length;
-  renderFriendsList();
-}
-
-async function loadFriendRequests() {
-  const supabase = getSupabase();
-  if (!supabase || !state.user) return;
-  const { data, error } = await supabase
-    .from("friend_requests")
-    .select("id, from_user_id, to_user_id, status, created_at")
-    .or(`to_user_id.eq.${state.user.id},from_user_id.eq.${state.user.id}`)
-    .eq("status", "pending");
-  if (error || !data) {
-    console.warn("Load requests:", error);
-    return;
-  }
-  state.friendRequests = data.filter((r) => r.to_user_id === state.user.id);
-  if (els.requestCount) els.requestCount.textContent = `${state.friendRequests.length} 条待处理`;
-  renderFriendRequests();
-}
-
-async function renderFriendsList() {
-  if (!els.friendsList) return;
-  if (!state.friends.length) {
-    els.friendsList.innerHTML = "<div class=\"listItem\">暂无好友</div>";
-    return;
-  }
-  const supabase = getSupabase();
-  if (!supabase) return;
-  const { data: users, error } = await supabase
-    .from("users")
-    .select("id, email, name")
-    .in("id", state.friends);
-  if (error || !users) {
-    console.warn("Load friend users:", error);
-    return;
-  }
-  els.friendsList.innerHTML = users
-    .map((u) => {
-      const name = u.name || u.email?.split("@")[0] || "用户";
-      const email = u.email || "";
-      return `
-        <div class="listItem">
-          <div class="listItem__icon">👤</div>
-          <div class="listItem__meta">
-            <div class="listItem__title">${escapeHtml(name)}</div>
-            <div class="listItem__desc">${escapeHtml(email)}</div>
-          </div>
-        </div>
-      `;
-    })
-    .join("");
-}
-
-async function renderFriendRequests() {
-  if (!els.friendRequests) return;
-  if (!state.friendRequests.length) {
-    els.friendRequests.innerHTML = "<div class=\"listItem\">暂无待处理请求</div>";
-    return;
-  }
-  const supabase = getSupabase();
-  if (!supabase) return;
-  const fromIds = state.friendRequests.map((r) => r.from_user_id);
-  const { data: users, error } = await supabase.from("users").select("id, email, name").in("id", fromIds);
-  if (error || !users) {
-    console.warn("Load request users:", error);
-    return;
-  }
-  els.friendRequests.innerHTML = state.friendRequests
-    .map((req) => {
-      const fromUser = users.find((u) => u.id === req.from_user_id);
-      if (!fromUser) return "";
-      const name = fromUser.name || fromUser.email?.split("@")[0] || "用户";
-      const email = fromUser.email || "";
-      return `
-        <div class="listItem">
-          <div class="listItem__icon">👤</div>
-          <div class="listItem__meta">
-            <div class="listItem__title">${escapeHtml(name)}</div>
-            <div class="listItem__desc">${escapeHtml(email)}</div>
-          </div>
-          <div class="listItem__actions">
-            <button class="btn btn--primary btn--small" data-action="accept" data-request-id="${req.id}" data-from-id="${req.from_user_id}">接受</button>
-            <button class="btn btn--ghost btn--small" data-action="reject" data-request-id="${req.id}">拒绝</button>
-          </div>
-        </div>
-      `;
-    })
-    .join("");
-  els.friendRequests.querySelectorAll("[data-action]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const action = btn.getAttribute("data-action");
-      const requestId = btn.getAttribute("data-request-id");
-      if (action === "accept") {
-        const fromId = btn.getAttribute("data-from-id");
-        await acceptFriendRequest(requestId, fromId);
-      } else if (action === "reject") {
-        await rejectFriendRequest(requestId);
-      }
-    });
-  });
-}
-
-async function renderSearchResults(query) {
-  if (!els.searchResults) return;
-  if (!query?.trim()) {
-    els.searchResults.innerHTML = "";
-    return;
-  }
-  els.searchResults.innerHTML = "<div class=\"listItem\">搜索中...</div>";
-  
-  // 检查用户是否登录
-  if (!state.user) {
-    els.searchResults.innerHTML = "<div class=\"listItem\">请先登录</div>";
-    return;
-  }
-  
-  const supabase = getSupabase();
-  if (!supabase) {
-    els.searchResults.innerHTML = "<div class=\"listItem\">Supabase 未初始化</div>";
-    return;
-  }
-  
-  let users = [];
-  try {
-    users = await searchUsers(query);
-    console.log("搜索结果:", users, "查询:", query);
-    
-    if (users.length === 0) {
-      els.searchResults.innerHTML = "<div class=\"listItem\">未找到用户<br/><small style='opacity:0.6;font-size:0.85rem;margin-top:8px;display:block;'>可能的原因：<br/>1. 用户可能还未注册<br/>2. 邮箱/用户名不匹配<br/>3. 请检查浏览器控制台查看详细错误信息</small></div>";
-      return;
-    }
-  } catch (error) {
-    console.error("搜索出错:", error);
-    els.searchResults.innerHTML = "<div class=\"listItem\">搜索出错: " + (error.message || "未知错误") + "<br/><small style='opacity:0.6;font-size:0.85rem;margin-top:8px;display:block;'>请检查浏览器控制台查看详细错误</small></div>";
-    return;
-  }
-  
-  // 获取好友请求和好友列表（用于判断状态）
-  let sentIds = new Set();
-  let friendIds = new Set();
-  
-  try {
-    const { data: requests } = await supabase
-      .from("friend_requests")
-      .select("to_user_id, status")
-      .eq("from_user_id", state.user.id)
-      .eq("status", "pending");
-    const { data: friends } = await supabase.from("friends").select("friend_id").eq("user_id", state.user.id);
-    sentIds = new Set((requests || []).map((r) => r.to_user_id));
-    friendIds = new Set((friends || []).map((f) => f.friend_id));
-  } catch (error) {
-    console.warn("获取好友状态失败:", error);
-  }
-  els.searchResults.innerHTML = users
-    .map((u) => {
-      const name = u.name || u.user_metadata?.name || u.email?.split("@")[0] || "用户";
-      const email = u.email || "";
-      const isFriend = friendIds.has(u.id);
-      const hasRequest = sentIds.has(u.id);
-      let actionBtn = "";
-      if (isFriend) {
-        actionBtn = '<span class="muted">已是好友</span>';
-      } else if (hasRequest) {
-        actionBtn = '<span class="muted">已发送请求</span>';
-      } else {
-        actionBtn = `<button class="btn btn--primary btn--small" data-action="add" data-user-id="${u.id}">添加好友</button>`;
-      }
-      return `
-        <div class="listItem">
-          <div class="listItem__icon">👤</div>
-          <div class="listItem__meta">
-            <div class="listItem__title">${escapeHtml(name)}</div>
-            <div class="listItem__desc">${escapeHtml(email)}</div>
-          </div>
-          <div class="listItem__actions">${actionBtn}</div>
-        </div>
-      `;
-    })
-    .join("");
-  els.searchResults.querySelectorAll("[data-action='add']").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const userId = btn.getAttribute("data-user-id");
-      await sendFriendRequest(userId);
-      renderSearchResults(query);
-    });
-  });
-}
 
 function openAuthModal(tab = "login") {
   if (!els.authModal) return;
@@ -1830,7 +1600,7 @@ function switchAuthTab(tab) {
 /* ---------------------------
  * 启动
  * --------------------------- */
-function init() {
+async function init() {
   bind();
   bgFX.resize();
   bgFX.start();
@@ -1844,9 +1614,12 @@ function init() {
     swipeHint.classList.remove("hidden");
   }
 
+  // 为每个 mood 加载对应的歌曲列表
+  await loadAllMoodTracks();
+
   // 检查登录状态
   checkAuthSession();
-  
+
   // 监听 auth 状态变化
   const supabase = getSupabase();
   if (supabase) {
@@ -1866,6 +1639,8 @@ function init() {
   const initial = getUrlMood();
   if (initial) {
     setMood(initial, { autoplay: false, pushUrl: true, burst: true, burstOrigin: null });
+    // 如果已经设置了 mood，需要重新渲染歌曲列表
+    renderTrackList();
   } else {
     showPick();
   }

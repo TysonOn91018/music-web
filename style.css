@@ -1848,7 +1848,7 @@ body[data-mood] {
   }
 }
 
-/* 登录/注册模态框 */
+/* ログイン/登録モーダル - 白黒トーン */
 .authModal {
   position: fixed;
   inset: 0;
@@ -1869,7 +1869,7 @@ body[data-mood] {
 .authModal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
 }
 
@@ -1877,11 +1877,11 @@ body[data-mood] {
   position: relative;
   z-index: 1;
   width: min(400px, 90vw);
-  background: var(--bg1);
-  border: 1px solid var(--stroke);
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius);
   padding: 24px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .authModal__close {
@@ -1892,7 +1892,7 @@ body[data-mood] {
   height: 32px;
   border: none;
   background: transparent;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 1.2rem;
   cursor: pointer;
   border-radius: 999px;
@@ -1903,22 +1903,22 @@ body[data-mood] {
 }
 
 .authModal__close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 1);
 }
 
 .authModal__tabs {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid var(--stroke);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .authModal__tab {
   padding: 10px 16px;
   border: none;
   background: transparent;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.95rem;
   cursor: pointer;
   border-bottom: 2px solid transparent;
@@ -1926,12 +1926,12 @@ body[data-mood] {
 }
 
 .authModal__tab:hover {
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .authModal__tab--active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
+  color: rgba(255, 255, 255, 1);
+  border-bottom-color: rgba(255, 255, 255, 1);
 }
 
 .authModal__form {
@@ -1943,29 +1943,41 @@ body[data-mood] {
 .authModal__form input {
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 1);
   font-size: 0.95rem;
   font-family: var(--font-body);
 }
 
 .authModal__form input::placeholder {
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .authModal__form input:focus {
   outline: none;
-  border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .authModal__form .btn {
   margin-top: 4px;
 }
 
+/* モーダル内のボタンを白黒トーンに */
+.authModal__form .btn--primary {
+  background: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
+  border: none;
+}
+
+.authModal__form .btn--primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 1);
+}
+
 .authModal__error {
-  color: #ff6b6b;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.85rem;
   min-height: 20px;
   margin-top: -4px;

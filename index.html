@@ -32,21 +32,15 @@
               <div id="trackList" class="list" role="list"></div>
             </div>
 
-            <div id="userLeft" class="view" aria-label="用户资料">
+            <div id="userLeft" class="view" aria-label="ユーザープロフィール">
               <div class="listHead">
-                <button id="backToHomeBtn" class="btn btn--ghost btn--back" type="button" style="margin-bottom: 12px;">← 返回首页</button>
-                <div class="listHead__label">我的资料</div>
+                <button id="backToHomeBtn" class="btn btn--ghost btn--back" type="button" style="margin-bottom: 12px;">← ホームに戻る</button>
+                <div class="listHead__label">マイプロフィール</div>
                 <div class="listHead__sub" id="userEmail">—</div>
               </div>
               <div class="userProfile">
                 <div class="userProfile__avatar">👤</div>
                 <div class="userProfile__name" id="profileName">—</div>
-                <div class="userProfile__stats">
-                  <div class="userProfile__stat">
-                    <span class="userProfile__statLabel">好友</span>
-                    <span class="userProfile__statValue" id="friendCount">0</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -55,18 +49,18 @@
             <div id="pickRight" class="view view--active">
               <div class="indexTopNav">
                 <div class="indexBrand">Mood Player</div>
-                <button id="hamburgerMenu" class="hamburgerMenu" type="button" aria-label="菜单">
+                <button id="hamburgerMenu" class="hamburgerMenu" type="button" aria-label="メニュー">
                   <span></span>
                   <span></span>
                   <span></span>
                 </button>
                 <div id="userMenu" class="userMenu userMenu--dropdown" aria-hidden="true">
-                  <button id="homeBtn" class="btn btn--ghost" type="button">首页</button>
-                  <button id="loginBtn" class="btn btn--ghost" type="button">登录</button>
+                  <button id="homeBtn" class="btn btn--ghost" type="button">ホーム</button>
+                  <button id="loginBtn" class="btn btn--ghost" type="button">ログイン</button>
                   <div id="userInfo" class="userInfo" style="display: none;">
-                    <button id="myPageBtn" class="btn btn--ghost" type="button">我的页面</button>
-                    <span id="userName" class="userName" style="cursor: pointer;" title="查看个人资料">👤</span>
-                    <button id="logoutBtn" class="btn btn--ghost btn--small" type="button">登出</button>
+                    <button id="myPageBtn" class="btn btn--ghost" type="button">マイページ</button>
+                    <span id="userName" class="userName" style="cursor: pointer;" title="プロフィールを見る">👤</span>
+                    <button id="logoutBtn" class="btn btn--ghost btn--small" type="button">ログアウト</button>
                   </div>
                 </div>
               </div>
@@ -157,17 +151,17 @@
               </div>
 
               <div class="playerBar">
-                <button id="shuffleBtn" class="btn btn--icon" type="button" title="随机" aria-label="随机">🔀</button>
-                <button id="prevBtn" class="btn btn--icon" type="button" title="上一首" aria-label="上一首">⏮</button>
+                <button id="shuffleBtn" class="btn btn--icon" type="button" title="シャッフル" aria-label="シャッフル">🔀</button>
+                <button id="prevBtn" class="btn btn--icon" type="button" title="前の曲" aria-label="前の曲">⏮</button>
                 <button id="playBtn" class="btn btn--primary" type="button">▶ 再生</button>
-                <button id="nextBtn" class="btn btn--icon" type="button" title="下一首" aria-label="下一首">⏭</button>
-                <button id="repeatBtn" class="btn btn--icon" type="button" title="循环" aria-label="循环">🔁</button>
+                <button id="nextBtn" class="btn btn--icon" type="button" title="次の曲" aria-label="次の曲">⏭</button>
+                <button id="repeatBtn" class="btn btn--icon" type="button" title="リピート" aria-label="リピート">🔁</button>
                 <div class="volumeWrap">
-                  <button id="volumeMute" class="btn btn--icon" type="button" title="静音" aria-label="音量">🔊</button>
+                  <button id="volumeMute" class="btn btn--icon" type="button" title="ミュート" aria-label="音量">🔊</button>
                   <input id="volumeSlider" type="range" min="0" max="100" value="100" title="音量" aria-label="音量" />
                 </div>
-                <button id="chatBtn" class="btn btn--icon btn--chat" type="button" title="与同听这首歌的人聊天（需有人同时收听）" disabled>💬 Chat</button>
-                <button id="backBtn" class="btn btn--back" type="button" title="返回选心情">← 返回选心情</button>
+                <button id="chatBtn" class="btn btn--icon btn--chat" type="button" title="同じ曲を聴いている人とチャット（同時に聴いている人が必要）" disabled>💬 Chat</button>
+                <button id="backBtn" class="btn btn--back" type="button" title="気分を選ぶ画面に戻る">← 気分を選ぶ</button>
               </div>
 
               <div class="progress progress--wide" aria-label="再生状況">
@@ -182,48 +176,19 @@
 
               <div id="chatPanel" class="chatPanel" aria-hidden="true">
                 <div class="chatPanel__head">
-                  <span class="chatPanel__title">同听这首歌的人</span>
-                  <button id="chatClose" class="btn btn--icon" type="button" aria-label="关闭">✕</button>
+                  <span class="chatPanel__title">同じ曲を聴いている人</span>
+                  <button id="chatClose" class="btn btn--icon" type="button" aria-label="閉じる">✕</button>
                 </div>
                 <div id="chatMessages" class="chatPanel__messages" role="log"></div>
                 <div class="chatPanel__inputWrap">
-                  <input id="chatInput" type="text" placeholder="说点什么…" maxlength="500" autocomplete="off" />
-                  <button id="chatSend" class="btn btn--primary" type="button">发送</button>
+                  <input id="chatInput" type="text" placeholder="何か話してみて…" maxlength="500" autocomplete="off" />
+                  <button id="chatSend" class="btn btn--primary" type="button">送信</button>
                 </div>
               </div>
 
               <audio id="audio" preload="auto"></audio>
             </div>
 
-            <div id="userRight" class="view" aria-label="好友管理">
-              <div class="listHead">
-                <div class="listHead__label">好友</div>
-                <div class="listHead__sub">添加和管理好友</div>
-              </div>
-
-              <div class="friendSection">
-                <div class="friendSection__head">
-                  <input id="searchFriend" type="text" placeholder="搜索用户邮箱或用户名..." class="friendSearch" />
-                  <button id="searchFriendBtn" class="btn btn--primary btn--small" type="button">搜索</button>
-                </div>
-                <div id="searchResults" class="friendSearchResults"></div>
-              </div>
-
-              <div class="friendSection">
-                <div class="listHead">
-                  <div class="listHead__label">好友请求</div>
-                  <div class="listHead__sub" id="requestCount">0 条待处理</div>
-                </div>
-                <div id="friendRequests" class="list"></div>
-              </div>
-
-              <div class="friendSection">
-                <div class="listHead">
-                  <div class="listHead__label">我的好友</div>
-                </div>
-                <div id="friendsList" class="list"></div>
-              </div>
-            </div>
           </div>
 
           <div class="vinyl" aria-hidden="true">
@@ -241,26 +206,26 @@
       </footer>
     </main>
 
-    <!-- 登录/注册模态框 -->
+    <!-- ログイン/登録モーダル -->
     <div id="authModal" class="authModal" aria-hidden="true">
       <div class="authModal__backdrop"></div>
       <div class="authModal__content">
-        <button id="authClose" class="authModal__close" type="button" aria-label="关闭">✕</button>
+        <button id="authClose" class="authModal__close" type="button" aria-label="閉じる">✕</button>
         <div class="authModal__tabs">
-          <button id="authTabLogin" class="authModal__tab authModal__tab--active" type="button">登录</button>
-          <button id="authTabSignup" class="authModal__tab" type="button">注册</button>
+          <button id="authTabLogin" class="authModal__tab authModal__tab--active" type="button">ログイン</button>
+          <button id="authTabSignup" class="authModal__tab" type="button">新規登録</button>
         </div>
         <div id="authFormLogin" class="authModal__form">
-          <input id="loginEmail" type="email" placeholder="邮箱" autocomplete="email" />
-          <input id="loginPassword" type="password" placeholder="密码" autocomplete="current-password" />
-          <button id="loginSubmit" class="btn btn--primary" type="button">登录</button>
+          <input id="loginEmail" type="email" placeholder="メールアドレス" autocomplete="email" />
+          <input id="loginPassword" type="password" placeholder="パスワード" autocomplete="current-password" />
+          <button id="loginSubmit" class="btn btn--primary" type="button">ログイン</button>
           <div id="loginError" class="authModal__error"></div>
         </div>
         <div id="authFormSignup" class="authModal__form" style="display: none;">
-          <input id="signupEmail" type="email" placeholder="邮箱" autocomplete="email" />
-          <input id="signupPassword" type="password" placeholder="密码（至少6位）" autocomplete="new-password" />
-          <input id="signupName" type="text" placeholder="用户名" autocomplete="username" maxlength="20" />
-          <button id="signupSubmit" class="btn btn--primary" type="button">注册</button>
+          <input id="signupEmail" type="email" placeholder="メールアドレス" autocomplete="email" />
+          <input id="signupPassword" type="password" placeholder="パスワード（6文字以上）" autocomplete="new-password" />
+          <input id="signupName" type="text" placeholder="ユーザー名" autocomplete="username" maxlength="20" />
+          <button id="signupSubmit" class="btn btn--primary" type="button">新規登録</button>
           <div id="signupError" class="authModal__error"></div>
         </div>
       </div>

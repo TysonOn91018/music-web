@@ -1071,13 +1071,13 @@ function chatJoinRoom() {
   const roomId = getRoomId();
   if (!roomId) {
     console.log("[Chat] No roomId - mood:", state.mood, "track:", state.currentTrack);
-    updateChatButton(false, "未选择曲目");
+    updateChatButton(false, "曲目が選択されていません");
     return;
   }
   const supabase = getSupabase();
   if (!supabase) {
     console.log("[Chat] Supabase not configured");
-    updateChatButton(false, "配置 Supabase 后可启用同听聊天");
+    updateChatButton(false, "Supabase を設定すると同時視聴チャットが有効になります");
     return;
   }
 
@@ -1096,7 +1096,7 @@ function chatJoinRoom() {
       const count = Object.values(presence).reduce((n, arr) => n + (arr?.length || 0), 0);
       console.log("[Chat] Presence sync - count:", count, "presence:", presence);
       state.canChat = count >= 2;
-      updateChatButton(state.canChat, state.canChat ? `有 ${count} 人同听，可聊天` : `当前 ${count} 人，需要至少 2 人才能聊天`);
+      updateChatButton(state.canChat, state.canChat ? `${count} 人が同時視聴中、チャット可能` : `現在 ${count} 人、チャットには最低 2 人必要です`);
     })
     .subscribe(async (status) => {
       console.log("[Chat] Channel status:", status);
@@ -1144,10 +1144,10 @@ function chatLeaveRoom() {
 function updateChatButton(canOpen, tooltip) {
   if (!els.chatBtn) return;
   els.chatBtn.disabled = !canOpen;
-  const defaultMsg = canOpen ? "与同听这首歌的人聊天" : "暂无其他人同时收听此曲，无法打开聊天";
+  const defaultMsg = canOpen ? "同じ曲を聴いている人とチャット" : "現在他に同じ曲を聴いている人がいないため、チャットを開けません";
   els.chatBtn.title = tooltip || defaultMsg;
   if (els.chatBtn.textContent.includes("Chat")) {
-    els.chatBtn.textContent = canOpen ? "💬 Chat" : "💬 Chat (需2人)";
+    els.chatBtn.textContent = canOpen ? "💬 Chat" : "💬 Chat (2人必要)";
   }
 }
 
@@ -1166,7 +1166,7 @@ function chatLoadMessages() {
     .then(({ data, error }) => {
       if (error) {
         console.warn("Supabase chat load:", error);
-        const errMsg = escapeHtml(String(error.message || "未知错误"));
+        const errMsg = escapeHtml(String(error.message || "不明なエラー"));
         const isAbortLike =
           String(error.message || "").includes("AbortError") ||
           String(error.message || "").toLowerCase().includes("aborted") ||
@@ -1174,22 +1174,22 @@ function chatLoadMessages() {
         const origin = window.location?.origin || "";
         const hint = (() => {
           if (window.location?.protocol === "file:") {
-            return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+            return "file:// で直接開いている場合、Supabase が Origin=null をブロックする可能性があります。ローカルサーバーで開いてください（例：npx serve .）。";
           }
           if (isAbortLike) {
             return (
-              `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
-              `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
-              `2) 关闭广告拦截/Brave Shields 再试 ` +
-              `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+              `これはネットワーク/CORS/インターセプトによるリクエストキャンセルの可能性が高いです。確認してください：` +
+              `1) Supabase → Settings → API → CORS Allowed Origins に ${origin} が含まれているか ` +
+              `2) 広告ブロッカー/Brave Shields をオフにして再試行 ` +
+              `3) ネットワークが *.supabase.co にアクセスできるか（必要に応じて VPN をオン）`
             );
           }
-          return "常见原因：1) chat_messages 表未创建 2) 开启了 RLS 但没写 select/insert policy 3) URL/anonKey 不对。";
+          return "よくある原因：1) chat_messages テーブルが作成されていない 2) RLS が有効だが select/insert policy が書かれていない 3) URL/anonKey が間違っている。";
         })();
         if (els.chatMessages) {
           els.chatMessages.innerHTML =
             `<div class="chatMsg">` +
-            `<div class="chatMsg__meta">加载失败</div>` +
+            `<div class="chatMsg__meta">読み込み失敗</div>` +
             `<div class="chatMsg__text">${errMsg}<br/><span style="opacity:.75">${escapeHtml(hint)}</span></div>` +
             `</div>`;
         }
@@ -1208,7 +1208,7 @@ function chatLoadMessages() {
     })
     .catch((e) => {
       console.warn("Supabase chat load:", e);
-      const errMsg = escapeHtml(String(e?.message || e || "未知错误"));
+      const errMsg = escapeHtml(String(e?.message || e || "不明なエラー"));
       const isAbortLike =
         String(e?.name || "").includes("AbortError") ||
         String(e?.message || "").includes("AbortError") ||
@@ -1217,22 +1217,22 @@ function chatLoadMessages() {
       const origin = window.location?.origin || "";
       const hint = (() => {
         if (window.location?.protocol === "file:") {
-          return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+          return "file:// で直接開いている場合、Supabase が Origin=null をブロックする可能性があります。ローカルサーバーで開いてください（例：npx serve .）。";
         }
         if (isAbortLike) {
           return (
-            `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
-            `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
-            `2) 关闭广告拦截/Brave Shields 再试 ` +
-            `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+            `これはネットワーク/CORS/インターセプトによるリクエストキャンセルの可能性が高いです。確認してください：` +
+            `1) Supabase → Settings → API → CORS Allowed Origins に ${origin} が含まれているか ` +
+            `2) 広告ブロッカー/Brave Shields をオフにして再試行 ` +
+            `3) ネットワークが *.supabase.co にアクセスできるか（必要に応じて VPN をオン）`
           );
         }
-        return "请确认：Supabase URL/anonKey 正确、chat_messages 表已创建、（若启用 RLS）已添加允许 select/insert 的 policy。";
+        return "確認してください：Supabase URL/anonKey が正しい、chat_messages テーブルが作成されている、（RLS が有効な場合）select/insert を許可する policy が追加されている。";
       })();
       if (els.chatMessages) {
         els.chatMessages.innerHTML =
           `<div class="chatMsg">` +
-          `<div class="chatMsg__meta">请求失败</div>` +
+          `<div class="chatMsg__meta">リクエスト失敗</div>` +
           `<div class="chatMsg__text">${errMsg}<br/><span style="opacity:.75">${escapeHtml(hint)}</span></div>` +
           `</div>`;
       }
@@ -1279,7 +1279,7 @@ function chatSendMessage(text) {
   const supabase = getSupabase();
   if (!supabase) {
     console.warn("[Chat] Cannot send message - Supabase not available");
-    toast("无法发送：Supabase 未配置");
+    toast("送信できません：Supabase が設定されていません");
     return;
   }
 
@@ -1298,7 +1298,7 @@ function chatSendMessage(text) {
     .then(({ data, error }) => {
       if (error) {
         console.error("[Chat] Send message error:", error);
-        const errMsg = String(error.message || "未知错误");
+        const errMsg = String(error.message || "不明なエラー");
         const isAbortLike =
           String(error.message || "").includes("AbortError") ||
           String(error.message || "").toLowerCase().includes("aborted") ||
@@ -1306,19 +1306,19 @@ function chatSendMessage(text) {
         const origin = window.location?.origin || "";
         const hint = (() => {
           if (window.location?.protocol === "file:") {
-            return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+            return "file:// で直接開いている場合、Supabase が Origin=null をブロックする可能性があります。ローカルサーバーで開いてください（例：npx serve .）。";
           }
           if (isAbortLike) {
             return (
-              `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
-              `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
-              `2) 关闭广告拦截/Brave Shields 再试 ` +
-              `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+              `これはネットワーク/CORS/インターセプトによるリクエストキャンセルの可能性が高いです。確認してください：` +
+              `1) Supabase → Settings → API → CORS Allowed Origins に ${origin} が含まれているか ` +
+              `2) 広告ブロッカー/Brave Shields をオフにして再試行 ` +
+              `3) ネットワークが *.supabase.co にアクセスできるか（必要に応じて VPN をオン）`
             );
           }
-          return "常见原因：1) chat_messages 表未创建 2) 开启了 RLS 但没写 insert policy 3) URL/anonKey 不对。";
+          return "よくある原因：1) chat_messages テーブルが作成されていない 2) RLS が有効だが insert policy が書かれていない 3) URL/anonKey が間違っている。";
         })();
-        toast(`发送失败：${errMsg}`);
+        toast(`送信失敗：${errMsg}`);
         console.warn("[Chat] Send failed - hint:", hint);
       } else {
         console.log("[Chat] Message sent successfully");
@@ -1326,7 +1326,7 @@ function chatSendMessage(text) {
     })
     .catch((e) => {
       console.error("[Chat] Send message exception:", e);
-      const errMsg = String(e?.message || e || "未知错误");
+      const errMsg = String(e?.message || e || "不明なエラー");
       const isAbortLike =
         String(e?.name || "").includes("AbortError") ||
         String(e?.message || "").includes("AbortError") ||
@@ -1335,19 +1335,19 @@ function chatSendMessage(text) {
       const origin = window.location?.origin || "";
       const hint = (() => {
         if (window.location?.protocol === "file:") {
-          return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+          return "file:// で直接開いている場合、Supabase が Origin=null をブロックする可能性があります。ローカルサーバーで開いてください（例：npx serve .）。";
         }
         if (isAbortLike) {
           return (
-            `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
-            `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
-            `2) 关闭广告拦截/Brave Shields 再试 ` +
-            `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+            `これはネットワーク/CORS/インターセプトによるリクエストキャンセルの可能性が高いです。確認してください：` +
+            `1) Supabase → Settings → API → CORS Allowed Origins に ${origin} が含まれているか ` +
+            `2) 広告ブロッカー/Brave Shields をオフにして再試行 ` +
+            `3) ネットワークが *.supabase.co にアクセスできるか（必要に応じて VPN をオン）`
           );
         }
-        return "请确认：Supabase URL/anonKey 正确、chat_messages 表已创建、（若启用 RLS）已添加允许 insert 的 policy。";
+        return "確認してください：Supabase URL/anonKey が正しい、chat_messages テーブルが作成されている、（RLS が有効な場合）insert を許可する policy が追加されている。";
       })();
-      toast(`发送失败：${errMsg}`);
+      toast(`送信失敗：${errMsg}`);
       console.warn("[Chat] Send exception - hint:", hint);
     });
 }

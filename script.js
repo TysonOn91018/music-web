@@ -1265,14 +1265,28 @@ function chatSubscribeMessages() {
     .subscribe();
 }
 
+/**
+ * 发送聊天消息
+ * 将消息插入到 Supabase 的 chat_messages 表中
+ * @param {string} text - 要发送的消息文本
+ */
 function chatSendMessage(text) {
   const t = String(text).trim();
-  if (!t || !state.chatRoomId) return;
+  if (!t || !state.chatRoomId) {
+    console.warn("[Chat] Cannot send message - text:", !!t, "roomId:", !!state.chatRoomId);
+    return;
+  }
   const supabase = getSupabase();
-  if (!supabase) return;
+  if (!supabase) {
+    console.warn("[Chat] Cannot send message - Supabase not available");
+    toast("无法发送：Supabase 未配置");
+    return;
+  }
 
   const roomId = state.chatRoomId;
   const roomHash = getRoomIdHash(roomId);
+  console.log("[Chat] Sending message:", t.substring(0, 50), "to room:", roomHash);
+  
   supabase
     .from("chat_messages")
     .insert({
@@ -1281,7 +1295,61 @@ function chatSendMessage(text) {
       user_name: getChatUserName(),
       message: t,
     })
-    .then(() => {});
+    .then(({ data, error }) => {
+      if (error) {
+        console.error("[Chat] Send message error:", error);
+        const errMsg = String(error.message || "未知错误");
+        const isAbortLike =
+          String(error.message || "").includes("AbortError") ||
+          String(error.message || "").toLowerCase().includes("aborted") ||
+          String(error.message || "").toLowerCase().includes("failed to fetch");
+        const origin = window.location?.origin || "";
+        const hint = (() => {
+          if (window.location?.protocol === "file:") {
+            return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+          }
+          if (isAbortLike) {
+            return (
+              `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
+              `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
+              `2) 关闭广告拦截/Brave Shields 再试 ` +
+              `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+            );
+          }
+          return "常见原因：1) chat_messages 表未创建 2) 开启了 RLS 但没写 insert policy 3) URL/anonKey 不对。";
+        })();
+        toast(`发送失败：${errMsg}`);
+        console.warn("[Chat] Send failed - hint:", hint);
+      } else {
+        console.log("[Chat] Message sent successfully");
+      }
+    })
+    .catch((e) => {
+      console.error("[Chat] Send message exception:", e);
+      const errMsg = String(e?.message || e || "未知错误");
+      const isAbortLike =
+        String(e?.name || "").includes("AbortError") ||
+        String(e?.message || "").includes("AbortError") ||
+        String(e?.message || "").toLowerCase().includes("aborted") ||
+        String(e?.message || "").toLowerCase().includes("failed to fetch");
+      const origin = window.location?.origin || "";
+      const hint = (() => {
+        if (window.location?.protocol === "file:") {
+          return "你现在是用 file:// 直接打开页面，Supabase 可能会拦截 Origin=null。请用本地服务器打开（例如 npx serve .）。";
+        }
+        if (isAbortLike) {
+          return (
+            `这更像是网络/CORS/拦截导致请求被取消。请检查：` +
+            `1) Supabase → Settings → API → CORS Allowed Origins 是否包含 ${origin} ` +
+            `2) 关闭广告拦截/Brave Shields 再试 ` +
+            `3) 网络是否能访问 *.supabase.co（必要时开 VPN）`
+          );
+        }
+        return "请确认：Supabase URL/anonKey 正确、chat_messages 表已创建、（若启用 RLS）已添加允许 insert 的 policy。";
+      })();
+      toast(`发送失败：${errMsg}`);
+      console.warn("[Chat] Send exception - hint:", hint);
+    });
 }
 
 function openChatPanel() {
